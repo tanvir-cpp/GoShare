@@ -18,6 +18,7 @@ register().then(() => {
   loadSharedFiles();
   setupDragDrop();
   displayShareUrl();
+  window.addEventListener("resize", renderPeers);
 });
 
 async function register() {
