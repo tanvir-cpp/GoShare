@@ -34,7 +34,7 @@ async function register() {
   } catch (e) {
     console.error("Registration failed:", e);
     document.getElementById("emptyState").innerHTML =
-      '<div style="color:var(--pink)">Connection Error</div><div style="font-size:0.75rem">' +
+      '<div style="color:var(--danger)">Connection Error</div><div style="font-size:0.75rem">' +
       e.message +
       '</div><p style="font-size:0.7rem;margin-top:1rem">Check if your laptop firewall is blocking port 8080</p>';
   }
@@ -129,10 +129,7 @@ function closeSharedOverlay() {
   document.getElementById("sharedOverlay").classList.remove("open");
 }
 
-document.getElementById("modalFileInput").onchange = (e) =>
-  upload(e.target.files, targetPeer, "transfer");
-document.getElementById("sharedFileInput").onchange = (e) =>
-  upload(e.target.files, null, "shared");
+// File input change handlers are set up in setupDragDrop()
 
 function upload(files, to, prefix) {
   if (!files.length) return;
@@ -209,7 +206,8 @@ async function loadSharedFiles() {
       '<span class="del" title="Delete file" onclick="event.stopPropagation();delFile(\'' +
       f.name +
       "')\">×</span>";
-    chip.onclick = () => (location.href = "/download/" + f.name);
+    chip.onclick = () =>
+      (location.href = "/download/" + f.name + "?id=" + myId);
     bar.appendChild(chip);
   });
 }
@@ -219,7 +217,7 @@ async function delFile(n) {
   loadSharedFiles();
 }
 function downloadNotifFile() {
-  if (notifFile) location.href = "/download/" + notifFile;
+  if (notifFile) location.href = "/download/" + notifFile + "?id=" + myId;
   document.getElementById("notif").classList.remove("show");
 }
 function toast(m) {
@@ -238,13 +236,37 @@ function formatBytes(bytes) {
 }
 
 function setupDragDrop() {
-  const areas = ["modalDropArea", "sharedDropArea"];
-  const inputs = ["modalFileInput", "sharedFileInput"];
+  const configs = [
+    {
+      area: "modalDropArea",
+      input: "modalFileInput",
+      getTo: () => targetPeer,
+      prefix: "transfer",
+    },
+    {
+      area: "sharedDropArea",
+      input: "sharedFileInput",
+      getTo: () => null,
+      prefix: "shared",
+    },
+  ];
 
-  areas.forEach((areaId, idx) => {
+  configs.forEach(({ area: areaId, input: inputId, getTo, prefix }) => {
     const area = document.getElementById(areaId);
-    const input = document.getElementById(inputs[idx]);
+    const input = document.getElementById(inputId);
 
+    // Click to open file picker
+    area.addEventListener("click", () => input.click());
+
+    // File selected via picker
+    input.addEventListener("change", () => {
+      if (input.files.length) {
+        upload(input.files, getTo(), prefix);
+        input.value = "";
+      }
+    });
+
+    // Drag events
     ["dragenter", "dragover", "dragleave", "drop"].forEach((evt) => {
       area.addEventListener(evt, preventDefaults, false);
     });
@@ -261,14 +283,12 @@ function setupDragDrop() {
       );
     });
 
+    // Drop handler
     area.addEventListener(
       "drop",
       (e) => {
         const files = e.dataTransfer.files;
-        if (files.length) {
-          input.files = files;
-          input.dispatchEvent(new Event("change"));
-        }
+        if (files.length) upload(files, getTo(), prefix);
       },
       false,
     );

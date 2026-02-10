@@ -207,6 +207,15 @@ header p {
   font-size: 0.55rem;
   color: var(--muted);
 }
+@keyframes peer-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .empty-state {
   margin-top: 2rem;
@@ -215,7 +224,7 @@ header p {
 .empty-state p.muted {
   font-size: 0.85rem;
   margin-top: 0.5rem;
-  opacity: 0.8;
+  color: var(--muted);
 }
 .device-count {
   display: inline-block;
@@ -357,12 +366,28 @@ header p {
   font-size: 1.25rem;
   margin-bottom: 1.5rem;
 }
+.peer-target {
+  font-size: 2.8rem;
+  margin: 0.5rem 0;
+}
+.peer-name {
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+.copy-icon {
+  opacity: 0.6;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
 .modal .drop-area {
   border: 2px dashed var(--border);
   background: rgba(15, 23, 42, 0.3);
   border-radius: 16px;
   padding: 3rem 1rem;
   margin-bottom: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 .modal .drop-area:hover,
 .modal .drop-area.drag-over {
@@ -398,9 +423,14 @@ header p {
   height: 8px;
   background: #0f172a;
   border-radius: 4px;
+  overflow: hidden;
 }
 .transfer-fill {
+  height: 100%;
+  width: 0;
   background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.2s;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 

@@ -48,18 +48,14 @@
         <h2>Send file to</h2>
         <div class="peer-target" id="modalIcon"></div>
         <div class="peer-name" id="modalName"></div>
-        <div
-          class="drop-area"
-          id="modalDropArea"
-          onclick="document.getElementById('modalFileInput').click()"
-        >
+        <div class="drop-area" id="modalDropArea">
           <div class="drop-icon">📂</div>
           <strong>Drag & Drop files here</strong>
           <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8">
             or click to browse
           </p>
-          <input type="file" id="modalFileInput" multiple />
         </div>
+        <input type="file" id="modalFileInput" multiple style="display: none" />
         <div class="transfer-progress" id="transferProgress">
           <div class="transfer-bar">
             <div class="transfer-fill" id="transferFill"></div>
@@ -84,7 +80,7 @@
     </div>
     <div class="modal-overlay" id="sharedOverlay">
       <div class="modal">
-        <h2>� Shared Space</h2>
+        <h2>📂 Shared Space</h2>
         <p
           style="
             color: var(--muted);
@@ -95,17 +91,18 @@
         >
           Anyone on the network can see these files
         </p>
-        <div
-          class="drop-area"
-          id="sharedDropArea"
-          onclick="document.getElementById('sharedFileInput').click()"
-        >
+        <div class="drop-area" id="sharedDropArea">
           <strong>Tap to Upload</strong>
           <p style="margin-top: 0.3rem; font-size: 0.75rem; opacity: 0.7">
             or drag files here
           </p>
-          <input type="file" id="sharedFileInput" multiple />
         </div>
+        <input
+          type="file"
+          id="sharedFileInput"
+          multiple
+          style="display: none"
+        />
         <div class="transfer-progress" id="sharedProgress">
           <div class="transfer-bar">
             <div class="transfer-fill" id="sharedFill"></div>

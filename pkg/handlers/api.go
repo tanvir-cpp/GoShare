@@ -160,17 +160,23 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	toID := r.FormValue("to")
+	rawTo := r.FormValue("to")
 	fromID := r.FormValue("from")
+	toID := ""
 	var saved []string
 
-	os.MkdirAll(SharedDir, 0755)
+	uploadDir := filepath.Join(SharedDir, "public")
+	if rawTo != "" {
+		toID = filepath.Base(rawTo)
+		uploadDir = filepath.Join(SharedDir, "private", toID)
+	}
+	os.MkdirAll(uploadDir, 0755)
 
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
 		f, _ := fh.Open()
 		safeName := filepath.Base(fh.Filename)
-		dst, _ := os.Create(filepath.Join(SharedDir, safeName))
+		dst, _ := os.Create(filepath.Join(uploadDir, safeName))
 		io.Copy(dst, f)
 		f.Close()
 		dst.Close()
@@ -190,14 +196,17 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 				})
 			}
 		}
+	} else {
+		discovery.Broadcast("shared-update", nil, "")
 	}
 
-	discovery.Broadcast("shared-update", nil, "")
 	w.WriteHeader(200)
 }
 
 func HandleListFiles(w http.ResponseWriter, r *http.Request) {
-	entries, _ := os.ReadDir(SharedDir)
+	publicDir := filepath.Join(SharedDir, "public")
+	os.MkdirAll(publicDir, 0755)
+	entries, _ := os.ReadDir(publicDir)
 	var list []map[string]interface{}
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -214,17 +223,33 @@ func HandleListFiles(w http.ResponseWriter, r *http.Request) {
 
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Base(r.URL.Path)
-	os.Remove(filepath.Join(SharedDir, name))
+	// Only allow deleting from public for now to prevent unauthorized deletion of private files
+	os.Remove(filepath.Join(SharedDir, "public", name))
 	discovery.Broadcast("shared-update", nil, "")
 	w.WriteHeader(200)
 }
 
 func HandleDownload(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Base(r.URL.Path)
-	path := filepath.Join(SharedDir, name)
-	if _, err := os.Stat(path); err == nil {
+	myID := filepath.Base(r.URL.Query().Get("id"))
+
+	// Try private folder first if id is provided
+	if myID != "" && myID != "." && myID != "\\" && myID != "/" {
+		privatePath := filepath.Join(SharedDir, "private", myID, name)
+		if _, err := os.Stat(privatePath); err == nil {
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", name))
+			// Auto-delete private files after download to enhance privacy
+			defer os.Remove(privatePath)
+			http.ServeFile(w, r, privatePath)
+			return
+		}
+	}
+
+	// Fallback to public folder
+	publicPath := filepath.Join(SharedDir, "public", name)
+	if _, err := os.Stat(publicPath); err == nil {
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", name))
-		http.ServeFile(w, r, path)
+		http.ServeFile(w, r, publicPath)
 	} else {
 		http.NotFound(w, r)
 	}
