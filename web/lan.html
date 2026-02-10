@@ -10,16 +10,16 @@
         theme: {
           extend: {
             colors: {
-              bg: "#0f172a",
-              card: "#1e293b",
-              "card-hover": "#334155",
-              border: "#334155",
-              accent: "#3b82f6",
-              "accent-soft": "rgba(59,130,246,0.1)",
-              success: "#10b981",
+              bg: "#09090b",
+              card: "#18181b",
+              "card-hover": "#27272a",
+              border: "#27272a",
+              accent: "#f59e0b",
+              "accent-soft": "rgba(245,158,11,0.1)",
+              success: "#22c55e",
               danger: "#ef4444",
-              warning: "#f59e0b",
-              muted: "#94a3b8",
+              warning: "#fb923c",
+              muted: "#a1a1aa",
             },
           },
         },
@@ -37,7 +37,7 @@
         top: 50%;
         left: 50%;
         border-radius: 50%;
-        border: 1px solid #3b82f6;
+        border: 1px solid #f59e0b;
         transform: translate(-50%, -50%);
         animation: ripple 4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
       }
@@ -103,7 +103,7 @@
     </style>
   </head>
   <body
-    class="bg-bg bg-[radial-gradient(circle_at_50%_-20%,#1e293b_0%,#0f172a_100%)] min-h-screen text-white flex flex-col items-center pt-8 pb-20 overflow-x-hidden"
+    class="bg-bg bg-[radial-gradient(circle_at_50%_-20%,#18181b_0%,#09090b_100%)] min-h-screen text-white flex flex-col items-center pt-8 pb-20 overflow-x-hidden"
   >
     <!-- App Container -->
     <div class="relative z-[1] text-center w-full max-w-[600px] px-4">
@@ -147,7 +147,7 @@
       <!-- Device Area -->
       <div
         id="deviceArea"
-        class="relative mx-auto mt-8 w-[min(340px,90vw)] h-[min(340px,90vw)] bg-[radial-gradient(circle,rgba(51,65,85,0.2)_0%,transparent_70%)] rounded-full"
+        class="relative mx-auto mt-8 w-[min(340px,90vw)] h-[min(340px,90vw)] bg-[radial-gradient(circle,rgba(39,39,42,0.3)_0%,transparent_70%)] rounded-full"
       >
         <div class="me-ring"></div>
         <!-- Me Node -->
@@ -188,7 +188,7 @@
       <button
         onclick="openSharedUpload()"
         title="Upload files to shared space"
-        class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-accent rounded-xl text-white text-sm font-semibold cursor-pointer transition-all hover:bg-blue-600"
+        class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-accent rounded-xl text-white text-sm font-semibold cursor-pointer transition-all hover:bg-amber-600"
       >
         <svg
           class="w-4 h-4"
@@ -245,7 +245,7 @@
           <div class="h-2 bg-bg rounded-full overflow-hidden">
             <div
               id="transferFill"
-              class="h-full bg-accent rounded-full transition-all duration-200 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              class="h-full bg-accent rounded-full transition-all duration-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
               style="width: 0"
             ></div>
           </div>
@@ -307,7 +307,7 @@
           <div class="h-2 bg-bg rounded-full overflow-hidden">
             <div
               id="sharedFill"
-              class="h-full bg-accent rounded-full transition-all duration-200 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              class="h-full bg-accent rounded-full transition-all duration-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
               style="width: 0"
             ></div>
           </div>
@@ -360,7 +360,7 @@
       </div>
       <button
         onclick="downloadNotifFile()"
-        class="w-full py-2.5 rounded-xl font-semibold bg-accent text-white cursor-pointer hover:bg-blue-600 transition"
+        class="w-full py-2.5 rounded-xl font-semibold bg-accent text-white cursor-pointer hover:bg-amber-600 transition"
       >
         Download
       </button>

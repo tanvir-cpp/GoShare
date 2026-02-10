@@ -14,6 +14,7 @@ let role = null; // "sender" or "receiver"
 let selectedFile = null;
 let pollTimer = null;
 let pollIndex = 0;
+let pendingCandidates = [];
 
 // ─── Init ───
 (function init() {
@@ -120,8 +121,8 @@ async function createRoom() {
       text: shareLink,
       width: 200,
       height: 200,
-      colorDark: "#3b82f6",
-      colorLight: "#0f172a",
+      colorDark: "#8b5cf6",
+      colorLight: "#09090b",
       correctLevel: QRCode.CorrectLevel.M,
     });
 
@@ -201,46 +202,61 @@ function sendFile() {
   document.getElementById("shareInfo").classList.add("hidden");
   document.getElementById("senderProgress").classList.remove("hidden");
 
+  const BUFFER_HIGH = 2 * 1024 * 1024; // 2MB
+  dataChannel.bufferedAmountLowThreshold = 512 * 1024; // 512KB
+
   const fileReader = new FileReader();
   let offset = 0;
   const fileSize = selectedFile.size;
 
-  fileReader.onload = (e) => {
-    if (dataChannel.readyState !== "open") return;
-
-    // Buffer management - wait if buffer is getting full
-    if (dataChannel.bufferedAmount > 16 * 1024 * 1024) {
-      // 16MB buffer limit
-      setTimeout(() => fileReader.onload(e), 100);
-      return;
-    }
-
-    dataChannel.send(e.target.result);
-    offset += e.target.result.byteLength;
-
+  function updateProgress() {
     const percent = Math.min(100, Math.round((offset / fileSize) * 100));
     document.getElementById("progressBar").style.width = percent + "%";
     document.getElementById("progressPercent").textContent = percent + "%";
     document.getElementById("progressDetail").textContent =
       formatBytes(offset) + " / " + formatBytes(fileSize);
+  }
 
-    if (offset < fileSize) {
-      readSlice(offset);
-    } else {
-      // Send end marker
+  function readAndSend() {
+    const slice = selectedFile.slice(offset, offset + CHUNK_SIZE);
+    fileReader.readAsArrayBuffer(slice);
+  }
+
+  function sendNextChunk() {
+    if (dataChannel.readyState !== "open") return;
+
+    if (offset >= fileSize) {
       dataChannel.send("__EOF__");
       document.getElementById("senderProgress").classList.add("hidden");
       document.getElementById("senderDone").classList.remove("hidden");
       stopPolling();
+      return;
     }
-  };
 
-  function readSlice(o) {
-    const slice = selectedFile.slice(o, o + CHUNK_SIZE);
-    fileReader.readAsArrayBuffer(slice);
+    if (dataChannel.bufferedAmount > BUFFER_HIGH) {
+      dataChannel.onbufferedamountlow = () => {
+        dataChannel.onbufferedamountlow = null;
+        readAndSend();
+      };
+      return;
+    }
+
+    readAndSend();
   }
 
-  readSlice(0);
+  fileReader.onload = (e) => {
+    if (dataChannel.readyState !== "open") return;
+    dataChannel.send(e.target.result);
+    offset += e.target.result.byteLength;
+    updateProgress();
+    sendNextChunk();
+  };
+
+  fileReader.onerror = () => {
+    console.error("File read error");
+  };
+
+  sendNextChunk();
 }
 
 // ─── Receiver: Connect & Receive ───
@@ -250,6 +266,15 @@ async function startReceiver() {
   let receivedChunks = [];
   let fileMeta = null;
   let receivedSize = 0;
+
+  // Connection timeout — 30 seconds
+  const connectTimeout = setTimeout(() => {
+    if (!dataChannel || dataChannel.readyState !== "open") {
+      showRecvError("Connection timed out. The sender may have closed the page.");
+      stopPolling();
+      if (pc) pc.close();
+    }
+  }, 30000);
 
   pc.onicecandidate = (e) => {
     if (e.candidate) {
@@ -268,6 +293,7 @@ async function startReceiver() {
   };
 
   pc.ondatachannel = (e) => {
+    clearTimeout(connectTimeout);
     console.log("Received data channel");
     dataChannel = e.channel;
     dataChannel.binaryType = "arraybuffer";
@@ -408,14 +434,29 @@ async function handleSignal(signal) {
   try {
     if (signal.type === "offer" && role === "receiver") {
       await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
+      // Process any ICE candidates that arrived before the offer
+      for (const c of pendingCandidates) {
+        await pc.addIceCandidate(new RTCIceCandidate(c));
+      }
+      pendingCandidates = [];
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       sendSignal("answer", pc.localDescription);
     } else if (signal.type === "answer" && role === "sender") {
       await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
+      // Process any ICE candidates that arrived before the answer
+      for (const c of pendingCandidates) {
+        await pc.addIceCandidate(new RTCIceCandidate(c));
+      }
+      pendingCandidates = [];
     } else if (signal.type === "ice-candidate") {
       if (signal.data) {
-        await pc.addIceCandidate(new RTCIceCandidate(signal.data));
+        if (pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(signal.data));
+        } else {
+          // Buffer candidates until remote description is set
+          pendingCandidates.push(signal.data);
+        }
       }
     }
   } catch (err) {
@@ -470,6 +511,7 @@ function resetSender() {
   roomId = null;
   selectedFile = null;
   pollIndex = 0;
+  pendingCandidates = [];
   stopPolling();
 
   document.getElementById("senderDone").classList.add("hidden");
