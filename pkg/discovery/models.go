@@ -28,7 +28,7 @@ var (
 
 var adjectives = []string{"Swift", "Brave", "Calm", "Bold", "Keen", "Warm", "Cool", "Wise", "Bright", "Happy", "Gentle", "Lucky", "Noble", "Quiet", "Vivid", "Witty"}
 var animals = []string{"Panda", "Fox", "Owl", "Wolf", "Bear", "Hawk", "Lynx", "Orca", "Tiger", "Eagle", "Koala", "Raven", "Otter", "Falcon", "Shark", "Bison"}
-var icons = []string{"🦊", "🐼", "🦉", "🐺", "🐻", "🦅", "🐱", "🐬", "🐯", "🦁", "🐨", "🐦", "🦦", "🦈", "🐘", "🦋"}
+var icons = []string{"fox", "panda", "owl", "wolf", "bear", "hawk", "cat", "dolphin", "tiger", "lion", "koala", "raven", "otter", "shark", "elephant", "butterfly"}
 
 func MakeDeviceName(id string) string {
 	h := md5.Sum([]byte(id))

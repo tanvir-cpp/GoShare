@@ -1,0 +1,6 @@
+*.exe
+shared_files/
+private_*/
+.venv/
+__pycache__/
+*.pyc

@@ -31,6 +31,11 @@ func main() {
 	http.HandleFunc("/api/device/", handlers.Cors(handlers.HandleGetDevice))
 	http.HandleFunc("/download/", handlers.HandleDownload)
 
+	// P2P signaling routes
+	http.HandleFunc("/api/p2p/create", handlers.Cors(handlers.HandleP2PCreate))
+	http.HandleFunc("/api/p2p/signal", handlers.Cors(handlers.HandleP2PSignal))
+	http.HandleFunc("/api/p2p/poll", handlers.Cors(handlers.HandleP2PPoll))
+
 	// Static file server for web assets
 	fs := http.FileServer(http.Dir("web"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +49,12 @@ func main() {
 			w.Header().Set("Content-Type", "text/css")
 		} else if strings.HasSuffix(r.URL.Path, ".js") {
 			w.Header().Set("Content-Type", "application/javascript")
+		}
+
+		// Serve homepage for root path
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "web/home.html")
+			return
 		}
 
 		fs.ServeHTTP(w, r)
@@ -60,7 +71,7 @@ func main() {
 		if err == nil {
 			l.Close()
 			fmt.Printf("\n  ╔═══════════════════════════════════════════════╗\n")
-			fmt.Printf("  ║           ⚡  SnapShare Go  ⚡               ║\n")
+			fmt.Printf("  ║              GoShare                      ║\n")
 			fmt.Printf("  ╠═══════════════════════════════════════════════╣\n")
 			fmt.Printf("  ║  Local:   http://localhost:%-17d ║\n", currentPort)
 			fmt.Printf("  ║  Network: http://%-14s:%-12d  ║\n", ip, currentPort)
