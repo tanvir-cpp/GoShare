@@ -71,6 +71,7 @@ func broadcast(eventType string, data interface{}, excludeID string) {
 
 	lock.RLock()
 	defer lock.RUnlock()
+	count := 0
 	for id, dev := range devices {
 		if id == excludeID {
 			continue
@@ -78,9 +79,15 @@ func broadcast(eventType string, data interface{}, excludeID string) {
 		for _, q := range dev.Queues {
 			select {
 			case q <- sseMsg:
+				count++
+				log.Printf(" -> Sent %s to %s (%s)", eventType, dev.Name, id)
 			default:
+				log.Printf(" !! Could not send to %s (queue full)", dev.Name)
 			}
 		}
+	}
+	if count > 0 {
+		log.Printf("Broadcasted %s to %d listeners (excl: %s)", eventType, count, excludeID)
 	}
 }
 
@@ -233,27 +240,70 @@ header p{color:var(--muted);font-size:.88rem;margin-top:.25rem}
 <div class="toast" id="toast"></div>
 
 <script>
-const myId = localStorage.getItem('device_id') || (() => { const id = crypto.randomUUID(); localStorage.setItem('device_id', id); return id; })();
+const myId = localStorage.getItem('device_id') || (() => {
+  const id = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  localStorage.setItem('device_id', id);
+  return id;
+})();
 let peers = {}, targetPeer = null, notifFile = null, evtSource = null;
 
 register().then(() => { connectSSE(); loadSharedFiles(); });
 
 async function register() {
-  const r = await fetch('/api/register', { method: 'POST', body: JSON.stringify({id: myId}) });
-  const d = await r.json();
-  document.getElementById('meIcon').textContent = d.icon;
-  document.getElementById('meName').textContent = d.name;
+  try {
+    const r = await fetch('/api/register', { method: 'POST', body: JSON.stringify({id: myId}) });
+    if (!r.ok) throw new Error('status ' + r.status);
+    const d = await r.json();
+    document.getElementById('meIcon').textContent = d.icon;
+    document.getElementById('meName').textContent = d.name;
+  } catch (e) {
+    console.error('Registration failed:', e);
+    document.getElementById('emptyState').innerHTML = '<div style="color:var(--pink)">Connection Error</div><div style="font-size:0.75rem">' + e.message + '</div><p style="font-size:0.7rem;margin-top:1rem">Check if your laptop firewall is blocking port 8080</p>';
+  }
 }
 
 function connectSSE() {
   if (evtSource) evtSource.close();
+  console.log('Connecting to SSE...');
   evtSource = new EventSource('/api/events?id=' + myId);
-  evtSource.addEventListener('peers', e => { peers = {}; JSON.parse(e.data).forEach(p => peers[p.id] = p); renderPeers(); });
-  evtSource.addEventListener('device-joined', e => { const p = JSON.parse(e.data); peers[p.id] = p; renderPeers(); });
-  evtSource.addEventListener('device-left', e => { const p = JSON.parse(e.data); delete peers[p.id]; renderPeers(); });
-  evtSource.addEventListener('file-sent', e => { const d = JSON.parse(e.data); notifFile = d.filename; document.getElementById('notifTitle').textContent = d.from_icon + ' ' + d.from_name + ' sent a file'; document.getElementById('notifSub').textContent = d.filename; document.getElementById('notif').classList.add('show'); setTimeout(()=>document.getElementById('notif').classList.remove('show'), 8000); loadSharedFiles(); });
-  evtSource.addEventListener('shared-update', () => loadSharedFiles());
-  evtSource.onerror = () => setTimeout(connectSSE, 3000);
+  evtSource.onopen = () => console.log('SSE Connected');
+  evtSource.addEventListener('peers', e => {
+    console.log('Peers received:', e.data);
+    peers = {};
+    const data = JSON.parse(e.data);
+    if (data && Array.isArray(data)) data.forEach(p => peers[p.id] = p);
+    renderPeers();
+  });
+  evtSource.addEventListener('device-joined', e => {
+    console.log('Device joined:', e.data);
+    const p = JSON.parse(e.data);
+    peers[p.id] = p;
+    renderPeers();
+  });
+  evtSource.addEventListener('device-left', e => {
+    console.log('Device left:', e.data);
+    const p = JSON.parse(e.data);
+    delete peers[p.id];
+    renderPeers();
+  });
+  evtSource.addEventListener('file-sent', e => {
+    console.log('File received notification');
+    const d = JSON.parse(e.data);
+    notifFile = d.filename;
+    document.getElementById('notifTitle').textContent = d.from_icon + ' ' + d.from_name + ' sent a file';
+    document.getElementById('notifSub').textContent = d.filename;
+    document.getElementById('notif').classList.add('show');
+    setTimeout(()=>document.getElementById('notif').classList.remove('show'), 8000);
+    loadSharedFiles();
+  });
+  evtSource.addEventListener('shared-update', () => {
+    console.log('Shared space updated');
+    loadSharedFiles();
+  });
+  evtSource.onerror = (err) => {
+    console.error('SSE Error:', err);
+    setTimeout(connectSSE, 3000);
+  };
 }
 
 function renderPeers() {
@@ -261,14 +311,15 @@ function renderPeers() {
   area.querySelectorAll('.peer').forEach(el => el.remove());
   const ids = Object.keys(peers);
   document.getElementById('emptyState').style.display = ids.length ? 'none' : 'block';
-  const R = 130;
+  const R = 110; // Radius
+  const centerX = 170, centerY = 170; // Center of 340x340 area
   ids.forEach((id, i) => {
     const angle = (2 * Math.PI / ids.length) * i - Math.PI / 2;
-    const x = 50 + (R / (area.offsetWidth / 2)) * Math.cos(angle) * 100;
-    const y = 50 + (R / (area.offsetHeight / 2)) * Math.sin(angle) * 100;
+    const x = centerX + R * Math.cos(angle);
+    const y = centerY + R * Math.sin(angle);
     const p = peers[id];
     const el = document.createElement('div');
-    el.className = 'peer'; el.style.cssText = 'left:'+x+'%;top:'+y+'%;transform:translate(-50%,-50%)';
+    el.className = 'peer'; el.style.cssText = 'left:'+x+'px;top:'+y+'px;transform:translate(-50%,-50%)';
     el.innerHTML = '<div class="avatar">'+p.icon+'</div><div class="label">'+p.name+'</div><div class="type">'+p.type+'</div>';
     el.onclick = () => { targetPeer = id; document.getElementById('modalIcon').textContent = p.icon; document.getElementById('modalName').textContent = p.name; document.getElementById('modalOverlay').classList.add('open'); };
     area.appendChild(el);
@@ -315,8 +366,16 @@ function toast(m) { const t = document.getElementById('toast'); t.textContent = 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		return
+	}
+	log.Printf("Registering request from %s", r.RemoteAddr)
 	var body struct{ ID string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.Printf("Register error: %v", err)
 		http.Error(w, "invalid json", 400)
 		return
 	}
@@ -338,11 +397,14 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 			UA:       r.UserAgent(),
 			LastSeen: time.Now(),
 		}
+		log.Printf("Device Registered: %s (%s) from %s", devices[id].Name, id, r.RemoteAddr)
 	} else {
 		devices[id].LastSeen = time.Now()
+		devices[id].IP = r.RemoteAddr // Update IP in case it changed
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	json.NewEncoder(w).Encode(devices[id])
 }
 
@@ -362,18 +424,33 @@ func handleEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	q := make(chan []byte, 10)
 
 	lock.Lock()
-	if dev, ok := devices[id]; ok {
-		dev.Queues = append(dev.Queues, q)
-		dev.LastSeen = time.Now()
+	dev, ok := devices[id]
+	if !ok {
+		// Auto-register if missing (likely server restart)
+		dev = &Device{
+			ID:       id,
+			Name:     makeDeviceName(id),
+			Icon:     makeDeviceIcon(id),
+			Type:     detectType(r.UserAgent()),
+			IP:       r.RemoteAddr,
+			UA:       r.UserAgent(),
+			LastSeen: time.Now(),
+		}
+		devices[id] = dev
+		log.Printf("Auto-registered device on SSE connection: %s (%s)", dev.Name, id)
 	}
+	dev.Queues = append(dev.Queues, q)
+	dev.LastSeen = time.Now()
+	log.Printf("SSE Connected: %s (%s) [Total Queues: %d]", dev.Name, id, len(dev.Queues))
 	lock.Unlock()
 
 	// Initial peer list
-	var list []Device
+	list := []Device{}
 	lock.RLock()
 	for did, d := range devices {
 		if did != id {
@@ -384,6 +461,7 @@ func handleEvents(w http.ResponseWriter, r *http.Request) {
 	msg, _ := json.Marshal(list)
 	fmt.Fprintf(w, "event: peers\ndata: %s\n\n", msg)
 	flusher.Flush()
+	log.Printf("Sent initial peer list to %s (%d peers)", id, len(list))
 
 	// Announce join
 	lock.RLock()
@@ -403,6 +481,7 @@ func handleEvents(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		lock.Unlock()
+		log.Printf("SSE Disconnected: %s (%s)", id, id)
 		broadcast("device-left", map[string]string{"id": id}, id)
 	}()
 
@@ -503,15 +582,40 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 func getLocalIP() string {
+	// Try to get IP by "dialing" an external address (doesn't send any traffic)
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err == nil {
+		defer conn.Close()
+		localAddr := conn.LocalAddr().(*net.UDPAddr)
+		return localAddr.IP.String()
+	}
+
+	// Fallback to iterating interfaces
 	addrs, _ := net.InterfaceAddrs()
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
+				ip := ipnet.IP.String()
+				// Skip link-local addresses (APIPA)
+				if !strings.HasPrefix(ip, "169.254.") {
+					return ip
+				}
 			}
 		}
 	}
 	return "127.0.0.1"
+}
+
+func cors(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == "OPTIONS" {
+			return
+		}
+		h(w, r)
+	}
 }
 
 func main() {
@@ -523,6 +627,7 @@ func main() {
 	os.MkdirAll(sharedDir, 0755)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 		if r.URL.Path == "/" {
 			w.Header().Set("Content-Type", "text/html")
 			w.Write([]byte(page))
@@ -532,11 +637,11 @@ func main() {
 			http.NotFound(w, r)
 		}
 	})
-	http.HandleFunc("/api/register", handleRegister)
-	http.HandleFunc("/api/events", handleEvents)
-	http.HandleFunc("/api/upload", handleUpload)
-	http.HandleFunc("/api/files", handleListFiles)
-	http.HandleFunc("/api/delete/", handleDelete)
+	http.HandleFunc("/api/register", cors(handleRegister))
+	http.HandleFunc("/api/events", cors(handleEvents))
+	http.HandleFunc("/api/upload", cors(handleUpload))
+	http.HandleFunc("/api/files", cors(handleListFiles))
+	http.HandleFunc("/api/delete/", cors(handleDelete))
 	http.HandleFunc("/download/", handleDownload)
 
 	go cleanupStale()
