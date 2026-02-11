@@ -7,6 +7,7 @@
   <title>Nearby Sharing — GoShare</title>
   <meta name="description" content="Share files instantly with devices on your local network" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/css/shared.css" />
   <link rel="stylesheet" href="/static/css/lan.css" />
 </head>
@@ -27,16 +28,14 @@
     </div>
 
     <button onclick="changeName()"
-      style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem; background: transparent; padding: 4px 8px; border-radius: var(--radius-md); transition: background 0.2s;"
-      class="hover:bg-white/5">
+      style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 5px 6px 5px 12px; border-radius: var(--radius-full); transition: all 0.3s ease;"
+      class="hover:border-white/20 hover:bg-white/5">
       <div class="text-right hidden-sm">
         <div id="navUserName" style="font-size: 0.85rem; font-weight: 600; color: #fff;">...</div>
         <div
           style="font-size: 0.7rem; color: var(--success); font-weight: 500; display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem;">
           Online
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="12" r="10" />
-          </svg>
+          <i class="fa-solid fa-circle" style="font-size: 8px; opacity: 0.8;"></i>
         </div>
       </div>
       <div style="position: relative;">
@@ -44,7 +43,7 @@
           style="width: 36px; height: 36px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
         </div>
         <div
-          style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: #222; border: 1.5px solid var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+          style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: var(--accent); border: 1.5px solid var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
           <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
             stroke-linecap="round" stroke-linejoin="round">
             <path
@@ -89,14 +88,12 @@
     </div>
     <p class="text-dim" style="font-size: 0.85rem; text-align: center;">Devices running GoShare will appear here</p>
 
-    <div style="margin-top: 3rem; text-align: center;">
-      <button onclick="openConnectModal()" class="text-muted hover:text-white"
-        style="background: transparent; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-        </svg>
-        Connect with Link or QR
+    <div style="margin-top: 3.5rem; text-align: center;">
+      <button onclick="openConnectModal()"
+        style="padding: 0.75rem 1.75rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.85rem; color: #fff; display: inline-flex; align-items: center; gap: 0.75rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"
+        class="hover:border-white/20 hover:bg-white/5">
+        <i class="fa-solid fa-link" style="font-size: 14px;"></i>
+        <span>Connect with Link or QR</span>
       </button>
     </div>
   </main>
@@ -107,9 +104,7 @@
   </div>
 
   <button onclick="openSharedUpload()" class="action-fab">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
+    <i class="fa-solid fa-plus" style="font-size: 18px;"></i>
     <span>Share Files</span>
   </button>
 
@@ -124,9 +119,7 @@
       </header>
 
       <div class="drop-zone" id="modalDropArea">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-        </svg>
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; margin-bottom: 1rem; color: var(--text-dim);"></i>
         <div style="font-weight: 500; margin-bottom: 4px;">Choose files</div>
         <div class="text-dim" style="font-size: 0.75rem;">or drag and drop here</div>
       </div>
@@ -186,9 +179,7 @@
       </header>
 
       <div class="drop-zone" id="sharedDropArea">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-        </svg>
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; margin-bottom: 1rem; color: var(--text-dim);"></i>
         <div style="font-weight: 500; margin-bottom: 4px;">Choose files</div>
         <div class="text-dim" style="font-size: 0.75rem;">or drag and drop here</div>
       </div>
@@ -253,11 +244,12 @@
       <input type="text" id="newNameInput" maxlength="20" placeholder="Enter name..."
         style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 1rem 1.5rem; border-radius: var(--radius-md); color: #fff; margin-bottom: 2rem; outline: none; font-size: 1rem;">
 
-      <div style="display: flex; gap: 1rem;">
+      <div style="display: flex; gap: 0.75rem;">
         <button onclick="closeNameModal()"
-          style="flex: 1; background: transparent; color: var(--text-dim);">Cancel</button>
-        <button onclick="saveNameFromModal()" class="btn-primary" style="flex: 2; justify-content: center;">Save
-          Name</button>
+          style="flex: 1; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;"
+          class="hover:text-white">Cancel</button>
+        <button onclick="saveNameFromModal()" class="btn-primary"
+          style="flex: 2; justify-content: center; padding: 0.75rem; font-size: 0.9rem;">Save Changes</button>
       </div>
     </div>
   </div>
