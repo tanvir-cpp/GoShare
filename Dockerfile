@@ -1,19 +1,20 @@
 # ─── Build Stage ───
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24.0-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git
 
 WORKDIR /app
 
-# Copy dependency files first
-COPY go.mod ./
-
 # Copy source code
 COPY . .
 
+# Ensure dependencies are correct (even if using only standard library)
+RUN go mod tidy
+
 # Build as a static binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o goshare ./cmd/goshare
+# Targeting the explicit main.go file path
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o goshare cmd/goshare/main.go
 
 # ─── Production Stage ───
 FROM alpine:latest
