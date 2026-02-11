@@ -21,19 +21,51 @@
 
 ## 🛠️ Quick Start
 
-### Run with Go
+### 1. Run with Go (from source)
+Ensure you have **Go 1.24.3+** installed.
 ```bash
+# Clone the repository
 git clone https://github.com/tanvir-cpp/GoShare.git
 cd GoShare
-go run ./cmd/goshare/main.go
-```
-The application will be available at `http://localhost:8080` (or the IP displayed in the console).
 
-### Run with Docker
+# Run directly from the root
+go run ./cmd/goshare
+
+# OR Build and run the binary
+go build -o goshare ./cmd/goshare
+./goshare
+```
+
+### 2. Run Pre-built Binary (Windows)
+If you are on Windows, you can simply run the provided executable:
+```powershell
+.\goshare.exe
+```
+
+### 3. Run with Docker
 ```bash
 docker build -t goshare .
 docker run -p 8080:8080 goshare
 ```
+
+The application will start on port `8080`. Access it at `http://localhost:8080` (or your local IP).
+
+---
+
+## 📖 Usage Guide
+
+GoShare offers two modes of operation:
+
+1.  **LAN Mode (Nearby Sharing)**:
+    -   Connect all devices to the same Wi-Fi or Local Network.
+    -   Click on **"Nearby"** in the top navigation.
+    -   Devices will automatically appear in the list. Simply drag and drop files onto a device icon to send.
+
+2.  **P2P Mode (Global Sharing)**:
+    -   Click on **"Global"** in the top navigation.
+    -   Select the files you want to share.
+    -   Click **"Create Secure Link"**.
+    -   Share the generated URL or QR code with your recipient.
 
 ---
 
