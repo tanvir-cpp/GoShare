@@ -156,36 +156,52 @@
         </div>
       </div>
 
-      <!-- Transfer Progress -->
-      <div id="senderProgress" class="hidden max-w-lg mx-auto mt-6">
-        <div class="bg-card border border-border rounded-2xl p-6">
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-semibold text-sm" id="progressLabel">Sending...</span>
-            <span class="text-accent text-sm font-bold" id="progressPercent">0%</span>
+      <!-- Unified Transfer Overlay -->
+      <div id="transferOverlay"
+        class="fixed inset-0 bg-bg/95 backdrop-blur-xl z-[1000] hidden flex items-center justify-center p-6">
+        <div class="w-full max-w-sm scale-95 opacity-0 transition-all duration-300" id="transferCard">
+          <div class="text-center mb-10">
+            <div id="transferIcon"
+              class="w-20 h-20 mx-auto mb-6 bg-white/[0.03] border border-white/10 rounded-3xl flex items-center justify-center transition-all duration-500">
+              <svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" />
+              </svg>
+            </div>
+            <h2 id="transferName" class="text-lg font-bold uppercase tracking-tight truncate mb-1">Transmission</h2>
+            <p id="transferStage" class="text-[10px] uppercase tracking-[0.3em] text-zinc-600 font-bold">Initializing...
+            </p>
           </div>
-          <div class="w-full h-3 bg-bg rounded-full overflow-hidden">
-            <div id="progressBar" class="h-full bg-accent rounded-full transition-all duration-200" style="width: 0%">
+
+          <div class="relative h-1 mb-8 bg-white/5 rounded-full overflow-hidden">
+            <div id="transferBar" class="absolute inset-y-0 left-0 bg-white transition-all duration-300"
+              style="width: 0%">
             </div>
           </div>
-          <div class="text-slate-500 text-xs mt-2" id="progressDetail"></div>
-        </div>
-      </div>
 
-      <!-- Done -->
-      <div id="senderDone" class="hidden max-w-lg mx-auto mt-6 text-center">
-        <div class="bg-card border border-success/30 rounded-2xl p-8">
-          <div class="w-14 h-14 mx-auto mb-3 text-success">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
+          <div class="grid grid-cols-3 gap-6 mb-12">
+            <div class="text-center">
+              <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Progress</div>
+              <div id="uiPercent" class="text-xs font-bold font-mono">0%</div>
+            </div>
+            <div class="text-center border-x border-white/5">
+              <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Speed</div>
+              <div id="uiSpeed" class="text-xs font-bold font-mono">0 MB/s</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Time Left</div>
+              <div id="uiEta" class="text-xs font-bold font-mono">--:--</div>
+            </div>
           </div>
-          <h2 class="text-xl font-bold mb-1">Transfer Complete!</h2>
-          <p class="text-slate-400 text-sm">
-            File has been sent successfully.
-          </p>
-          <button onclick="resetSender()" class="mt-6 text-accent hover:underline text-sm font-semibold">
-            Share another file
+
+          <button id="abortBtn" onclick="abortTransfer()"
+            class="w-full py-4 border border-white/10 text-[10px] uppercase tracking-[0.3em] font-black hover:bg-white hover:text-black transition-all">
+            Abort Transmission
+          </button>
+
+          <button id="successCloseBtn" onclick="closeTransferOverlay()"
+            class="hidden w-full py-4 bg-white text-black text-[10px] uppercase tracking-[0.3em] font-black transition-all">
+            Continue
           </button>
         </div>
       </div>
@@ -209,53 +225,15 @@
                 d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
             </svg>
           </div>
-          <h2 class="font-bold text-lg mb-2">Connecting to sender...</h2>
-          <p class="text-slate-500 text-sm">
-            Establishing a direct peer-to-peer connection
+          <h2 class="font-bold text-lg mb-2 uppercase tracking-tight">Establishing Link</h2>
+          <p class="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
+            Direct Peer-to-Peer Tunneling
           </p>
         </div>
 
-        <!-- Receiving progress -->
-        <div id="recvProgress" class="hidden bg-card border border-border rounded-2xl p-6">
-          <div class="flex items-center gap-4 mb-4">
-            <div class="w-8 h-8 text-accent flex-shrink-0">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold truncate" id="recvFileName"></div>
-              <div class="text-slate-500 text-sm" id="recvFileSize"></div>
-            </div>
-          </div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm text-slate-400">Receiving...</span>
-            <span class="text-accent text-sm font-bold" id="recvPercent">0%</span>
-          </div>
-          <div class="w-full h-3 bg-bg rounded-full overflow-hidden">
-            <div id="recvBar" class="h-full bg-accent rounded-full transition-all duration-200" style="width: 0%"></div>
-          </div>
-        </div>
 
-        <!-- Done -->
-        <div id="recvDone" class="hidden bg-card border border-success/30 rounded-2xl p-8 text-center">
-          <div class="w-14 h-14 mx-auto mb-3 text-success">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-          </div>
-          <h2 class="text-xl font-bold mb-1">File Received!</h2>
-          <p class="text-slate-400 text-sm mb-4" id="recvDoneFile"></p>
-          <a id="recvDownloadLink"
-            class="inline-block bg-accent hover:bg-white/90 text-black font-bold py-3 px-8 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-            Download File
-          </a>
-          <div class="mt-4">
-            <a href="/p2p.html" class="text-accent hover:underline text-sm font-semibold">Share your own file</a>
-          </div>
-        </div>
+
+
 
         <!-- Error -->
         <div id="recvError" class="hidden bg-card border border-danger/30 rounded-2xl p-8 text-center">

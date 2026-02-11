@@ -16,17 +16,31 @@ let pollTimer = null;
 let pollIndex = 0;
 let pendingCandidates = [];
 let transferAccepted = false;
+let transferStartTime = 0;
+let abortCurrentTransfer = false;
+let isTransferring = false;
+let serverIp = window.location.hostname;
 
 // ─── Init ───
-(function init() {
+(async function init() {
   const params = new URLSearchParams(window.location.search);
   roomId = params.get("room");
+
+  // Fetch true server IP for local network sharing scenarios
+  try {
+    const infoRes = await fetch("/api/info");
+    const infoData = await infoRes.json();
+    serverIp = infoData.ip;
+  } catch (e) {
+    console.warn("Failed to fetch server IP, falling back to hostname:", e);
+  }
 
   if (roomId) {
     // Receiver mode
     role = "receiver";
     document.getElementById("senderView").classList.add("hidden");
     document.getElementById("receiverView").classList.remove("hidden");
+    updateIdentity(); // Allow receiver to have a name too
     startReceiver();
   } else {
     // Sender mode
@@ -185,7 +199,15 @@ async function createRoom() {
     roomId = data.room;
 
     // Show share link + QR
-    const shareLink = window.location.origin + "/p2p.html?room=" + roomId;
+    const port = window.location.port ? `:${window.location.port}` : "";
+    let base = window.location.origin;
+
+    // Replace localhost with the real IP if needed
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      base = `${window.location.protocol}//${serverIp}${port}`;
+    }
+
+    const shareLink = base + "/p2p.html?room=" + roomId;
     document.getElementById("shareUrl").textContent = shareLink;
 
     const qrEl = document.getElementById("qrcode");
@@ -194,8 +216,8 @@ async function createRoom() {
       text: shareLink,
       width: 200,
       height: 200,
-      colorDark: "#ffffff",
-      colorLight: "#09090b",
+      colorDark: "#000000",
+      colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M,
     });
 
@@ -272,22 +294,42 @@ function setupSenderConnection() {
 
 // ─── Sender: Send Files via DataChannel ───
 async function sendFile() {
+  if (isTransferring) return;
   if (selectedFiles.length === 0 || !dataChannel || dataChannel.readyState !== "open") {
     if (selectedFiles.length > 0) transferAccepted = true; // Wait for channel to open
     return;
   }
 
+  isTransferring = true;
   transferAccepted = false; // Reset flag
+  abortCurrentTransfer = false;
+
+  const overlay = document.getElementById("transferOverlay");
+  const card = document.getElementById("transferCard");
+  const bar = document.getElementById("transferBar");
+  const percentEl = document.getElementById("uiPercent");
+  const speedEl = document.getElementById("uiSpeed");
+  const etaEl = document.getElementById("uiEta");
+  const nameEl = document.getElementById("transferName");
+  const stageEl = document.getElementById("transferStage");
+  const abortBtn = document.getElementById("abortBtn");
+  const successBtn = document.getElementById("successCloseBtn");
+  const iconBox = document.getElementById("transferIcon");
 
   document.getElementById("shareInfo").classList.add("hidden");
-  document.getElementById("senderProgress").classList.remove("hidden");
+  overlay.classList.remove("hidden");
+  setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
 
   const BUFFER_HIGH = 2 * 1024 * 1024; // 2MB
   dataChannel.bufferedAmountLowThreshold = 512 * 1024; // 512KB
 
+  transferStartTime = Date.now();
+
   for (let i = 0; i < selectedFiles.length; i++) {
+    if (abortCurrentTransfer) break;
     const file = selectedFiles[i];
-    document.getElementById("progressLabel").textContent = `Sending (${i + 1}/${selectedFiles.length}): ${file.name}`;
+    nameEl.textContent = file.name;
+    stageEl.textContent = `Establishing Tunnel (${i + 1}/${selectedFiles.length})`;
 
     // Send metadata for this file
     dataChannel.send(JSON.stringify({
@@ -303,14 +345,29 @@ async function sendFile() {
       let offset = 0;
 
       function updateProgress() {
+        const now = Date.now();
+        const duration = Math.max(0.1, (now - transferStartTime) / 1000); // Guard against div-by-zero
+        const speed = offset / duration;
+        const remainingBytes = file.size - offset;
+        const eta = remainingBytes / speed;
+
         const percent = Math.min(100, Math.round((offset / file.size) * 100));
-        document.getElementById("progressBar").style.width = percent + "%";
-        document.getElementById("progressPercent").textContent = percent + "%";
-        document.getElementById("progressDetail").textContent =
-          formatBytes(offset) + " / " + formatBytes(file.size);
+        bar.style.width = percent + "%";
+        percentEl.textContent = percent + "%";
+        speedEl.textContent = formatBytes(speed) + "/s";
+        stageEl.textContent = "Transmitting Stream";
+
+        if (eta > 0 && eta < 3600) {
+          const mins = Math.floor(eta / 60);
+          const secs = Math.floor(eta % 60);
+          etaEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+        } else {
+          etaEl.textContent = "--:--";
+        }
       }
 
       function sendNextChunk() {
+        if (abortCurrentTransfer) return reject("Aborted");
         if (dataChannel.readyState !== "open") return reject("Channel closed");
 
         if (offset >= file.size) {
@@ -346,8 +403,24 @@ async function sendFile() {
     });
   }
 
-  document.getElementById("senderProgress").classList.add("hidden");
-  document.getElementById("senderDone").classList.remove("hidden");
+  if (abortCurrentTransfer) {
+    closeTransferOverlay();
+    return;
+  }
+
+  // Success State
+  stageEl.textContent = "Transmission Finished";
+  bar.style.width = "100%";
+  percentEl.textContent = "100%";
+  speedEl.textContent = "0 MB/s";
+  etaEl.textContent = "00:00";
+
+  iconBox.classList.add("bg-white", "border-white");
+  iconBox.innerHTML = `<svg class="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+  abortBtn.classList.add("hidden");
+  successBtn.classList.remove("hidden");
+
+  isTransferring = false;
   stopPolling();
 }
 
@@ -380,7 +453,8 @@ async function startReceiver() {
       pc.iceConnectionState === "failed" ||
       pc.iceConnectionState === "disconnected"
     ) {
-      showRecvError("Connection lost. Please try again.");
+      console.warn("ICE connection failed/disconnected", pc.iceConnectionState);
+      showRecvError("Peer-to-Peer tunnel collapsed. Try refreshing Both devices.");
     }
   };
 
@@ -392,15 +466,32 @@ async function startReceiver() {
 
     dataChannel.onmessage = (event) => {
       // First message for a file is metadata (JSON string)
-      if (!currentFileMeta && typeof event.data === "string") {
+      if (typeof event.data === "string" && event.data !== "__EOF__") {
         try {
           currentFileMeta = JSON.parse(event.data);
-          document.getElementById("recvConnecting").classList.add("hidden");
-          document.getElementById("recvProgress").classList.remove("hidden");
-          document.getElementById("recvFileName").textContent = `[${currentFileMeta.index + 1}/${currentFileMeta.total}] ${currentFileMeta.name}`;
-          document.getElementById("recvFileSize").textContent = formatBytes(currentFileMeta.size);
           receivedSize = 0;
           currentFileChunks = [];
+          transferStartTime = Date.now();
+
+          const overlay = document.getElementById("transferOverlay");
+          const card = document.getElementById("transferCard");
+          const nameEl = document.getElementById("transferName");
+          const stageEl = document.getElementById("transferStage");
+          const bar = document.getElementById("transferBar");
+          const abortBtn = document.getElementById("abortBtn");
+          const successBtn = document.getElementById("successCloseBtn");
+          const iconBox = document.getElementById("transferIcon");
+
+          nameEl.textContent = currentFileMeta.name;
+          stageEl.textContent = `Receiving (${currentFileMeta.index + 1}/${currentFileMeta.total})`;
+          bar.style.width = "0%";
+          abortBtn.classList.remove("hidden");
+          successBtn.classList.add("hidden");
+          iconBox.classList.remove("bg-white", "border-white");
+          iconBox.innerHTML = `<svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>`;
+
+          overlay.classList.remove("hidden");
+          setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
           return;
         } catch (e) { }
       }
@@ -412,27 +503,28 @@ async function startReceiver() {
         });
         const url = URL.createObjectURL(blob);
 
+        const stageEl = document.getElementById("transferStage");
+        const bar = document.getElementById("transferBar");
+        const iconBox = document.getElementById("transferIcon");
+        const abortBtn = document.getElementById("abortBtn");
+        const successBtn = document.getElementById("successCloseBtn");
+
         if (currentFileMeta.index + 1 === currentFileMeta.total) {
           // All files complete
-          document.getElementById("recvProgress").classList.add("hidden");
-          document.getElementById("recvDone").classList.remove("hidden");
-          document.getElementById("recvDoneFile").textContent = `Received ${currentFileMeta.total} file(s)`;
-
-          const link = document.getElementById("recvDownloadLink");
-          link.href = url;
-          link.download = currentFileMeta?.name || "download";
-          link.innerHTML = `Download Final File: ${currentFileMeta.name}`;
-          link.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 5000);
+          stageEl.textContent = "All Files Received";
+          bar.style.width = "100%";
+          iconBox.classList.add("bg-white", "border-white");
+          iconBox.innerHTML = `<svg class="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+          abortBtn.classList.add("hidden");
+          successBtn.classList.remove("hidden");
           stopPolling();
-        } else {
-          // Download individual file and prepare for next
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = currentFileMeta.name;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
-          currentFileMeta = null;
         }
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = currentFileMeta.name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
         return;
       }
 
@@ -442,16 +534,36 @@ async function startReceiver() {
         receivedSize += event.data.byteLength;
 
         if (currentFileMeta) {
+          const now = Date.now();
+          const duration = Math.max(0.1, (now - transferStartTime) / 1000);
+          const speed = receivedSize / duration;
+          const remainingBytes = currentFileMeta.size - receivedSize;
+          const eta = remainingBytes / speed;
+
+          const bar = document.getElementById("transferBar");
+          const percentEl = document.getElementById("uiPercent");
+          const speedEl = document.getElementById("uiSpeed");
+          const etaEl = document.getElementById("uiEta");
+
           const percent = Math.min(100, Math.round((receivedSize / currentFileMeta.size) * 100));
-          document.getElementById("recvBar").style.width = percent + "%";
-          document.getElementById("recvPercent").textContent = percent + "%";
+          bar.style.width = percent + "%";
+          percentEl.textContent = percent + "%";
+          speedEl.textContent = formatBytes(speed) + "/s";
+
+          if (eta > 0 && eta < 3600) {
+            const mins = Math.floor(eta / 60);
+            const secs = Math.floor(eta % 60);
+            etaEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+          } else {
+            etaEl.textContent = "--:--";
+          }
         }
       }
     };
 
     dataChannel.onclose = () => {
       console.log("DataChannel closed");
-      if (!fileMeta || receivedSize < fileMeta.size) {
+      if (!currentFileMeta || receivedSize < currentFileMeta.size) {
         showRecvError(
           "Transfer interrupted. The sender may have closed their browser.",
         );
@@ -465,7 +577,6 @@ async function startReceiver() {
 
 function showRecvError(msg) {
   document.getElementById("recvConnecting").classList.add("hidden");
-  document.getElementById("recvProgress").classList.add("hidden");
   document.getElementById("recvError").classList.remove("hidden");
   if (msg) document.getElementById("recvErrorMsg").textContent = msg;
 }
@@ -567,11 +678,11 @@ async function handleSignal(signal) {
       document.getElementById("requestModal").classList.remove("hidden");
     } else if (signal.type === "transfer-response") {
       if (signal.data.accepted) {
-        toast("Transfer accepted! Starting...");
+        showToast("Transfer accepted! Starting...");
         transferAccepted = true;
         sendFile();
       } else {
-        toast("Transfer declined by receiver.");
+        showToast("Transfer declined by receiver.");
         transferAccepted = false;
         resetSender();
       }
@@ -619,20 +730,18 @@ function showToast(msg) {
 }
 
 function resetSender() {
-  // Reset everything
   if (pc) {
     pc.close();
     pc = null;
   }
   dataChannel = null;
   roomId = null;
-  selectedFile = null;
+  selectedFiles = [];
+  isTransferring = false;
   pollIndex = 0;
   pendingCandidates = [];
   stopPolling();
 
-  document.getElementById("senderDone").classList.add("hidden");
-  document.getElementById("senderProgress").classList.add("hidden");
   document.getElementById("shareInfo").classList.add("hidden");
   document.getElementById("selectedFile").classList.add("hidden");
   document.getElementById("fileSelectArea").classList.remove("hidden");
@@ -640,5 +749,25 @@ function resetSender() {
 
   const btn = document.getElementById("shareBtn");
   btn.disabled = false;
-  btn.textContent = "Generate Share Link";
+  btn.textContent = "Create Share Link";
+  closeTransferOverlay();
+}
+
+function closeTransferOverlay() {
+  const overlay = document.getElementById("transferOverlay");
+  const card = document.getElementById("transferCard");
+  const iconBox = document.getElementById("transferIcon");
+
+  card.classList.add("scale-95", "opacity-0");
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    iconBox.classList.remove("bg-white", "border-white");
+  }, 300);
+}
+
+function abortTransfer() {
+  abortCurrentTransfer = true;
+  if (dataChannel) dataChannel.close();
+  showToast("Transfer Aborted");
+  closeTransferOverlay();
 }

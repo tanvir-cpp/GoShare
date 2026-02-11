@@ -14,7 +14,10 @@ let peers = {},
   incomingFiles = [],
   notifFile = null,
   evtSource = null,
-  serverIp = window.location.hostname;
+  serverIp = window.location.hostname,
+  currentXhr = null,
+  transferStartTime = 0,
+  abortCurrentTransfer = false;
 
 // SVG icon mapping for device icons (matches backend icon identifiers)
 const deviceIcons = {
@@ -225,46 +228,111 @@ function upload(files, to, prefix) {
   if (to) fd.append("to", to);
   fd.append("from", myId);
 
-  const prog = document.getElementById(prefix + "Progress"),
-    fill = document.getElementById(prefix + "Fill"),
-    percentEl = document.getElementById(prefix + "Percent"),
-    statusEl = document.getElementById(prefix + "Status");
+  // Show Premium Overlay
+  const overlay = document.getElementById("transferOverlay");
+  const card = document.getElementById("transferCard");
+  const bar = document.getElementById("transferBar");
+  const percentEl = document.getElementById("uiPercent");
+  const speedEl = document.getElementById("uiSpeed");
+  const etaEl = document.getElementById("uiEta");
+  const nameEl = document.getElementById("transferName");
+  const stageEl = document.getElementById("transferStage");
+  const abortBtn = document.getElementById("abortBtn");
+  const successBtn = document.getElementById("successCloseBtn");
+  const iconBox = document.getElementById("transferIcon");
 
-  prog.classList.remove("hidden");
-  fill.style.width = "0%";
+  nameEl.textContent = files.length > 1 ? `${files.length} Files` : files[0].name;
+  stageEl.textContent = "Negotiating...";
+  bar.style.width = "0%";
   percentEl.textContent = "0%";
-  statusEl.textContent =
-    "Uploading " +
-    files.length +
-    " file" +
-    (files.length > 1 ? "s" : "") +
-    "...";
+  speedEl.textContent = "0 MB/s";
+  etaEl.textContent = "--:--";
+  abortBtn.classList.remove("hidden");
+  successBtn.classList.add("hidden");
+  iconBox.innerHTML = `<svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" /></svg>`;
 
-  const xhr = new XMLHttpRequest();
-  xhr.upload.onprogress = (e) => {
-    const percent = Math.round((e.loaded / e.total) * 100);
-    fill.style.width = percent + "%";
-    percentEl.textContent = percent + "%";
-    statusEl.textContent = formatBytes(e.loaded) + " / " + formatBytes(e.total);
+  overlay.classList.remove("hidden");
+  setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
+
+  transferStartTime = Date.now();
+  currentXhr = new XMLHttpRequest();
+
+  currentXhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const now = Date.now();
+      const duration = (now - transferStartTime) / 1000;
+      const speed = e.loaded / duration; // bytes per second
+      const remainingBytes = e.total - e.loaded;
+      const eta = remainingBytes / speed;
+
+      const percent = Math.round((e.loaded / e.total) * 100);
+      bar.style.width = percent + "%";
+      percentEl.textContent = percent + "%";
+      speedEl.textContent = formatBytes(speed) + "/s";
+      stageEl.textContent = "Transmitting Data";
+
+      if (eta > 0 && eta < 3600) {
+        const mins = Math.floor(eta / 60);
+        const secs = Math.floor(eta % 60);
+        etaEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+      } else {
+        etaEl.textContent = "--:--";
+      }
+    }
   };
-  xhr.onload = () => {
-    fill.style.width = "100%";
-    percentEl.textContent = "100%";
-    statusEl.textContent = "Complete!";
-    toast("Sent successfully!");
-    setTimeout(() => {
-      closeModal();
-      closeSharedOverlay();
-      prog.classList.add("hidden");
-    }, 1000);
-    loadSharedFiles();
+
+  currentXhr.onload = () => {
+    if (currentXhr.status >= 200 && currentXhr.status < 300) {
+      bar.style.width = "100%";
+      percentEl.textContent = "100%";
+      stageEl.textContent = "Delivered";
+      speedEl.textContent = "0 MB/s";
+      etaEl.textContent = "00:00";
+
+      // Success Animation
+      iconBox.classList.add("bg-white", "border-white");
+      iconBox.innerHTML = `<svg class="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+      abortBtn.classList.add("hidden");
+      successBtn.classList.remove("hidden");
+
+      toast("Sent successfully!");
+      loadSharedFiles();
+    } else {
+      toast("Upload failed: " + currentXhr.statusText);
+      closeTransferOverlay();
+    }
   };
-  xhr.onerror = () => {
+
+  currentXhr.onerror = () => {
     toast("Upload failed!");
-    prog.classList.add("hidden");
+    closeTransferOverlay();
   };
-  xhr.open("POST", "/api/upload");
-  xhr.send(fd);
+
+  currentXhr.open("POST", "/api/upload");
+  currentXhr.send(fd);
+}
+
+function closeTransferOverlay() {
+  const overlay = document.getElementById("transferOverlay");
+  const card = document.getElementById("transferCard");
+  const iconBox = document.getElementById("transferIcon");
+
+  card.classList.add("scale-95", "opacity-0");
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+    // Reset icon and classes for next time
+    iconBox.classList.remove("bg-white", "border-white");
+    closeModal();
+    closeSharedOverlay();
+  }, 300);
+}
+
+function abortTransfer() {
+  if (currentXhr) {
+    currentXhr.abort();
+    toast("Transfer aborted");
+  }
+  closeTransferOverlay();
 }
 
 async function loadSharedFiles() {
@@ -452,7 +520,8 @@ function openConnectModal() {
   const urlText = document.getElementById("lanUrlText");
   const qrEl = document.getElementById("lanQr");
 
-  const fullUrl = `http://${serverIp}:${window.location.port}${window.location.pathname}`;
+  const port = window.location.port ? `:${window.location.port}` : "";
+  const fullUrl = `${window.location.protocol}//${serverIp}${port}${window.location.pathname}`;
   urlText.textContent = fullUrl;
 
   qrEl.innerHTML = "";

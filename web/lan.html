@@ -231,26 +231,62 @@
       </div>
 
       <button id="modalSendBtn" onclick="startLanUpload()"
-        class="w-full py-3 mb-2 bg-accent text-black rounded-xl font-bold hidden hover:bg-white transition">
+        class="w-full py-3 mb-2 bg-white text-black rounded-xl font-bold hidden hover:bg-zinc-200 transition">
         Send Files
       </button>
       <input type="file" id="modalFileInput" multiple class="hidden" />
 
-      <div id="transferProgress" class="mt-4 hidden">
-        <div class="h-2 bg-bg rounded-full overflow-hidden">
-          <div id="transferFill"
-            class="h-full bg-accent rounded-full transition-all duration-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-            style="width: 0"></div>
-        </div>
-        <div class="text-sm text-white mt-2 font-medium">
-          <span id="transferPercent">0%</span> &bull;
-          <span id="transferStatus">Preparing...</span>
-        </div>
-      </div>
-
       <button onclick="closeModal()"
         class="w-full py-3 mt-2 rounded-xl font-semibold cursor-pointer bg-transparent text-muted hover:text-white hover:bg-white/5 transition">
         Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Unified Transfer Overlay -->
+  <div id="transferOverlay"
+    class="fixed inset-0 bg-bg/95 backdrop-blur-xl z-[1000] hidden flex items-center justify-center p-6">
+    <div class="w-full max-w-sm scale-95 opacity-0 transition-all duration-300" id="transferCard">
+      <div class="text-center mb-10">
+        <div id="transferIcon"
+          class="w-20 h-20 mx-auto mb-6 bg-white/[0.03] border border-white/10 rounded-3xl flex items-center justify-center transition-all duration-500">
+          <svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" />
+          </svg>
+        </div>
+        <h2 id="transferName" class="text-lg font-bold uppercase tracking-tight truncate mb-1">Transmission</h2>
+        <p id="transferStage" class="text-[10px] uppercase tracking-[0.3em] text-zinc-600 font-bold">Initializing...</p>
+      </div>
+
+      <div class="relative h-1 mb-8 bg-white/5 rounded-full overflow-hidden">
+        <div id="transferBar" class="absolute inset-y-0 left-0 bg-white transition-all duration-300" style="width: 0%">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6 mb-12">
+        <div class="text-center">
+          <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Progress</div>
+          <div id="uiPercent" class="text-xs font-bold font-mono">0%</div>
+        </div>
+        <div class="text-center border-x border-white/5">
+          <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Speed</div>
+          <div id="uiSpeed" class="text-xs font-bold font-mono">0 MB/s</div>
+        </div>
+        <div class="text-center">
+          <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Time Left</div>
+          <div id="uiEta" class="text-xs font-bold font-mono">--:--</div>
+        </div>
+      </div>
+
+      <button id="abortBtn" onclick="abortTransfer()"
+        class="w-full py-4 border border-white/10 text-[10px] uppercase tracking-[0.3em] font-black hover:bg-white hover:text-black transition-all">
+        Abort Transmission
+      </button>
+
+      <button id="successCloseBtn" onclick="closeTransferOverlay()"
+        class="hidden w-full py-4 bg-white text-black text-[10px] uppercase tracking-[0.3em] font-black transition-all">
+        Continue
       </button>
     </div>
   </div>
@@ -276,18 +312,6 @@
         <p class="mt-1 text-xs opacity-70">or drag files here (Max 2 GB)</p>
       </div>
       <input type="file" id="sharedFileInput" multiple class="hidden" />
-
-      <div id="sharedProgress" class="mt-4 hidden">
-        <div class="h-2 bg-bg rounded-full overflow-hidden">
-          <div id="sharedFill"
-            class="h-full bg-accent rounded-full transition-all duration-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-            style="width: 0"></div>
-        </div>
-        <p class="text-sm mt-2">
-          <span id="sharedPercent">0%</span> &bull;
-          <span id="sharedStatus"></span>
-        </p>
-      </div>
 
       <button onclick="closeSharedOverlay()"
         class="w-full py-3 mt-4 rounded-xl font-semibold cursor-pointer bg-transparent text-muted hover:text-white hover:bg-white/5 transition">
