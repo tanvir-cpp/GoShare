@@ -1,441 +1,650 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GoShare — LAN</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            bg: "#09090b",
-            card: "#121214",
-            "card-hover": "#1c1c1f",
-            border: "#1f1f22",
-            accent: "#ffffff",
-            "accent-soft": "rgba(255, 255, 255, 0.05)",
-            success: "#ffffff",
-            danger: "#ef4444",
-            warning: "#a1a1aa",
-            muted: "#71717a",
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoShare — LAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              bg: "#0d0d12",
+              card: "#18181b",
+              "card-hover": "#252529",
+              border: "rgba(255, 255, 255, 0.04)",
+              accent: "#818cf8",
+              "accent-soft": "rgba(129, 140, 248, 0.05)",
+              success: "#34d399",
+              danger: "#f87171",
+              warning: "#fbbf24",
+              muted: "#71717a",
+            },
+            borderRadius: {
+              soft: "1rem",
+              "soft-lg": "1.5rem",
+            },
           },
         },
-      },
-    };
-  </script>
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&display=swap");
+      };
+    </script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&display=swap");
 
-    body {
-      font-family: "Hanken Grotesk", system-ui, sans-serif;
-    }
-
-    .grid-bg {
-      background-image:
-        linear-gradient(to right, rgba(255, 255, 255, 0.01) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
-      background-size: 30px 30px;
-    }
-
-    /* Ripple ring animation */
-    .me-ring {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      border-radius: 50%;
-      border: 1px dashed rgba(255, 255, 255, 0.1);
-      transform: translate(-50%, -50%);
-      animation: ripple 6s linear infinite;
-    }
-
-    @keyframes ripple {
-      0% {
-        width: clamp(80px, 25vw, 100px);
-        height: clamp(80px, 25vw, 100px);
-        opacity: 1;
+      body {
+        font-family: "Hanken Grotesk", system-ui, sans-serif;
       }
 
-      100% {
-        width: clamp(240px, 80vw, 300px);
-        height: clamp(240px, 80vw, 300px);
-        opacity: 0;
+      .grid-bg {
+        background-image:
+          radial-gradient(
+            circle at 50% 50%,
+            rgba(129, 140, 248, 0.02) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px
+          );
+        background-size:
+          100% 100%,
+          60px 60px,
+          60px 60px;
       }
-    }
 
-    /* Peer pop-in */
-    .peer {
-      animation: peer-in 0.4s ease-out both;
-    }
-
-    @keyframes peer-in {
-      from {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
+      /* Ripple ring animation */
+      .me-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.02);
+        transform: translate(-50%, -50%);
+        animation: ripple 8s cubic-bezier(0, 0, 0.2, 1) infinite;
       }
 
-      to {
-        opacity: 1;
+      @keyframes ripple {
+        0% {
+          width: 100px;
+          height: 100px;
+          opacity: 0.8;
+        }
+
+        100% {
+          width: 500px;
+          height: 500px;
+          opacity: 0;
+        }
       }
-    }
 
-    .peer:hover {
-      transform: translate(-50%, -50%) scale(1.1) rotate(2deg) !important;
-      z-index: 10;
-    }
+      /* Peer pop-in */
+      .peer {
+        animation: peer-in 0.4s ease-out both;
+      }
 
-    /* Toast slide-up */
-    .toast-show {
-      opacity: 1 !important;
-      transform: translateX(-50%) translateY(0) !important;
-    }
+      @keyframes peer-in {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
 
-    /* Notif slide-in */
-    .notif-show {
-      opacity: 1 !important;
-      transform: translateY(0) scale(1) !important;
-      pointer-events: auto !important;
-    }
+        to {
+          opacity: 1;
+        }
+      }
 
-    /* Modal overlay */
-    .modal-overlay {
-      display: none;
-    }
+      .peer:hover {
+        transform: translate(-50%, -50%) scale(1.1) rotate(2deg) !important;
+        z-index: 10;
+      }
 
-    .modal-overlay.open {
-      display: flex;
-    }
+      /* Toast slide-up */
+      .toast-show {
+        opacity: 1 !important;
+        transform: translateX(-50%) translateY(0) !important;
+      }
 
-    /* Scrollbar hide for shared bar */
-    .shared-bar::-webkit-scrollbar {
-      display: none;
-    }
+      /* Notif slide-in */
+      .notif-show {
+        opacity: 1 !important;
+        transform: translateY(0) scale(1) !important;
+        pointer-events: auto !important;
+      }
 
-    .shared-bar {
-      scrollbar-width: none;
-    }
-  </style>
-</head>
+      /* Modal overlay */
+      .modal-overlay {
+        display: none;
+      }
 
-<body class="bg-bg grid-bg min-h-screen text-white flex flex-col items-center pb-20 overflow-x-hidden">
-  <!-- Top Navigation Bar -->
-  <nav
-    class="fixed top-0 left-0 right-0 h-14 border-b border-border bg-bg/80 backdrop-blur-xl z-[150] flex items-center px-6 justify-between">
-    <div class="flex items-center gap-4">
-      <a href="/" class="text-zinc-500 hover:text-white transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-        </svg>
-      </a>
-      <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Local Area Network</span>
-    </div>
-    <div class="flex items-center gap-8">
-      <a href="/p2p.html"
-        class="text-[10px] font-bold text-zinc-500 hover:text-white transition uppercase tracking-[0.2em]">Switch to
-        P2P</a>
-      <div class="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-    </div>
-  </nav>
+      .modal-overlay.open {
+        display: flex;
+      }
 
-  <!-- App Container -->
-  <div class="relative z-[1] text-center w-full max-w-[600px] px-4 mt-24">
-    <header class="mb-12">
-      <h1 class="text-4xl font-extrabold tracking-tight mb-2 uppercase">
-        Nearby Sharing
-      </h1>
-      <p class="text-zinc-600 text-[10px] uppercase tracking-[0.3em] font-bold mb-6">
-        Scanning for devices on your network
-      </p>
-      <button onclick="openConnectModal()"
-        class="inline-flex items-center gap-2 px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 hover:bg-white hover:text-black transition-all">
-        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-        </svg>
-        Connect Device
-      </button>
-    </header>
+      /* Scrollbar hide for shared bar */
+      .shared-bar::-webkit-scrollbar {
+        display: none;
+      }
 
-    <!-- Device Area -->
-    <div id="deviceArea"
-      class="relative mx-auto mt-8 w-[min(340px,90vw)] h-[min(340px,90vw)] bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,transparent_70%)] rounded-full">
-      <div class="me-ring"></div>
-      <!-- Me Node -->
-      <div onclick="openSharedUpload()"
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[clamp(80px,25vw,100px)] h-[clamp(80px,25vw,100px)] rounded-full bg-card border-2 border-accent flex flex-col items-center justify-center cursor-pointer z-[5] shadow-lg group">
-        <div id="meIcon" class="w-8 h-8 text-accent"></div>
-        <div id="meName" class="text-[clamp(0.6rem,2vw,0.75rem)] text-white mt-0.5 font-bold"></div>
-        <div class="text-[0.6rem] text-muted uppercase tracking-wider">
-          You
+      .shared-bar {
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+
+  <body
+    class="bg-bg grid-bg min-h-screen text-white flex flex-col items-center pb-20 overflow-x-hidden"
+  >
+    <!-- Top Navigation Bar -->
+    <nav
+      class="fixed top-0 left-0 right-0 h-14 border-b border-white/[0.04] bg-bg/80 backdrop-blur-xl z-[150] flex items-center px-6 justify-between"
+    >
+      <div class="flex items-center gap-6">
+        <a
+          href="/"
+          class="font-semibold text-sm tracking-tight hover:opacity-70 transition"
+          ><span class="text-blue-500">go</span>share</a
+        >
+        <span
+          class="text-[10px] font-medium uppercase tracking-widest text-zinc-500 hidden sm:block"
+          >Local Area Network</span
+        >
+      </div>
+      <div class="flex items-center gap-6">
+        <a
+          href="/p2p.html"
+          class="text-[10px] font-medium text-zinc-500 hover:text-white transition-all uppercase tracking-widest"
+          >Global P2P</a
+        >
+        <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+      </div>
+    </nav>
+
+    <!-- App Container -->
+    <div class="relative z-[1] text-center w-full max-w-[600px] px-4 mt-20 sm:mt-32">
+      <header class="mb-12 sm:mb-16">
+        <h1 class="text-3xl sm:text-4xl font-semibold tracking-tighter mb-4 text-white">
+          Nearby
+        </h1>
+        <p class="text-zinc-500 text-[10px] sm:text-xs font-medium mb-8">
+          Scanning for active devices on your connection
+        </p>
+        <button
+          onclick="openConnectModal()"
+          class="inline-flex items-center gap-2 px-6 py-2.5 bg-white/[0.03] border border-white/[0.05] rounded-full text-[10px] font-semibold uppercase tracking-widest text-zinc-400 hover:bg-white hover:text-black transition-all"
+        >
+          <svg
+            class="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Direct Connect
+        </button>
+      </header>
+
+      <!-- Device Area -->
+      <div
+        id="deviceArea"
+        class="relative mx-auto mt-8 w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] bg-white/[0.01] rounded-full"
+      >
+        <div class="me-ring"></div>
+        <!-- Me Node -->
+        <div
+          onclick="openSharedUpload()"
+          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-card border border-white/[0.05] flex flex-col items-center justify-center cursor-pointer z-[5] hover:border-white transition-colors group"
+        >
+          <div
+            id="meIcon"
+            class="w-7 h-7 text-white/40 group-hover:text-white transition-colors"
+          ></div>
+          <div
+            id="meName"
+            class="text-[10px] text-white mt-1 font-semibold"
+          ></div>
+          <div
+            class="text-[8px] text-zinc-500 uppercase tracking-widest font-medium"
+          >
+            You
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Empty State -->
-    <div id="emptyState" class="mt-8 px-4">
-      <div id="deviceCount"
-        class="inline-block px-3 py-1 bg-accent-soft text-accent rounded-full text-xs font-bold mb-4">
-        0 devices online
+      <!-- Empty State -->
+      <div id="emptyState" class="mt-12 px-4">
+        <div
+          id="deviceCount"
+          class="inline-block px-3 py-1 bg-white/[0.03] border border-white/[0.05] text-zinc-500 rounded-full text-[10px] font-semibold uppercase tracking-widest mb-6"
+        >
+          0 Active
+        </div>
+        <p class="text-xs text-zinc-500 font-medium">
+          Share your URL to begin local transfers
+        </p>
       </div>
-      <p class="text-sm text-muted">
-        Share the URL above to start transferring files
-      </p>
     </div>
-  </div>
 
-  <!-- Shared Files Bar (fixed bottom) -->
-  <div id="sharedBar"
-    class="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-xl border-t border-border py-3 px-3 z-[100] flex items-center gap-3 overflow-x-auto shared-bar">
-    <button onclick="openSharedUpload()" title="Upload files for everyone to see"
-      class="group relative flex-shrink-0 flex items-center gap-2 px-6 py-2.5 bg-white text-black text-[10px] font-extrabold uppercase tracking-widest cursor-pointer transition-all hover:bg-zinc-200">
-      <span class="relative z-10">Upload to Shared</span>
+    <!-- Shared Files Bar (fixed bottom) -->
+    <div
+      id="sharedBar"
+      class="fixed bottom-0 left-0 right-0 bg-bg/80 backdrop-blur-xl border-t border-white/[0.04] py-4 px-4 sm:px-6 z-[100] flex items-center justify-between gap-4"
+    >
+      <button
+        onclick="openSharedUpload()"
+        class="flex-1 sm:flex-none flex items-center justify-center gap-3 px-5 py-2.5 bg-white text-black text-[10px] font-semibold uppercase tracking-widest rounded-full transition-opacity hover:opacity-90"
+      >
+        <span>Broadcast File</span>
+      </button>
+
+      <div class="flex items-center gap-4">
+        <button
+          onclick="changeName()"
+          title="Preferences"
+          class="p-2 text-zinc-500 hover:text-white transition-colors"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+            <path
+              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Send File Modal -->
+    <div
+      class="modal-overlay fixed inset-0 bg-bg/60 backdrop-blur-xl z-[400] items-center justify-center p-6"
+      id="modalOverlay"
+    >
       <div
-        class="absolute inset-0 translate-x-1 translate-y-1 border border-white -z-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+        class="bg-card border border-white/[0.05] rounded-soft-lg p-10 w-full max-w-[400px] shadow-2xl animate-in zoom-in-95 duration-500 ease-out"
+      >
+        <div class="flex flex-col items-center text-center mb-10">
+          <div
+            class="w-12 h-12 bg-white/[0.03] border border-white/[0.05] text-white rounded-2xl flex items-center justify-center mb-4"
+            id="modalIcon"
+          ></div>
+          <h2
+            class="text-xl font-semibold tracking-tight text-white mb-1"
+            id="modalName"
+          >
+            Select Files
+          </h2>
+          <p
+            class="text-[10px] uppercase tracking-widest text-zinc-500 font-medium"
+          >
+            Secure Local Transfer
+          </p>
+        </div>
+
+        <div
+          id="modalDropArea"
+          class="border border-dashed border-white/[0.1] bg-white/[0.02] rounded-soft p-10 mb-6 cursor-pointer transition-colors hover:bg-white/[0.04] flex flex-col items-center group"
+        >
+          <div
+            class="p-3 bg-white/[0.03] rounded-xl mb-4 group-hover:scale-110 transition-transform"
+          >
+            <svg
+              class="w-6 h-6 text-zinc-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+              />
+            </svg>
+          </div>
+          <span class="text-xs font-medium text-white/60">Choose files or drag here</span>
+        </div>
+
+        <div id="modalFileList" class="max-h-40 overflow-y-auto space-y-2 mb-6 hidden scrollbar-hide">
+          <!-- Queued files show here -->
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button id="modalSendBtn" onclick="startLanUpload()"
+            class="w-full py-3.5 bg-white text-black rounded-full font-semibold text-[10px] uppercase tracking-widest hidden hover:opacity-90 active:scale-95 transition-all">
+            Send Now
+          </button>
+          <button onclick="closeModal()"
+            class="w-full py-3 rounded-full font-semibold text-[10px] uppercase tracking-widest cursor-pointer bg-transparent text-zinc-500 hover:text-white transition">
+            Cancel
+          </button>
+        </div>
+        <input type="file" id="modalFileInput" multiple class="hidden" />
       </div>
-    </button>
-
-    <div class="flex-1"></div>
-
-    <button onclick="changeName()" title="Settings"
-      class="p-2.5 rounded-xl bg-white/5 border border-border text-muted hover:text-white hover:bg-white/10 transition flex-shrink-0">
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    </button>
-  </div>
-
-  <!-- Send File Modal -->
-  <div class="modal-overlay fixed inset-0 bg-bg/75 backdrop-blur-sm z-[200] items-center justify-center"
-    id="modalOverlay">
-    <div class="bg-card border border-border rounded-3xl p-10 w-[90%] max-w-[400px] shadow-2xl">
-      <h2 class="text-xl font-bold mb-6">Send file to</h2>
-      <div id="modalIcon" class="w-12 h-12 mx-auto text-accent my-2"></div>
-      <div id="modalName" class="text-accent font-semibold mb-4"></div>
-
-      <div id="modalDropArea"
-        class="border-2 border-dashed border-border bg-bg/30 rounded-2xl p-10 mb-4 cursor-pointer transition-all hover:border-accent hover:bg-accent-soft flex flex-col items-center">
-        <svg class="w-10 h-10 text-muted mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
-        </svg>
-        <strong>Drag & Drop files here</strong>
-        <p class="mt-2 text-sm opacity-80">or click to browse (Max 2 GB)</p>
-      </div>
-
-      <div id="modalFileList" class="max-h-40 overflow-y-auto space-y-2 mb-4 hidden">
-        <!-- Queued files show here -->
-      </div>
-
-      <button id="modalSendBtn" onclick="startLanUpload()"
-        class="w-full py-3 mb-2 bg-white text-black rounded-xl font-bold hidden hover:bg-zinc-200 transition">
-        Send Files
-      </button>
-      <input type="file" id="modalFileInput" multiple class="hidden" />
-
-      <button onclick="closeModal()"
-        class="w-full py-3 mt-2 rounded-xl font-semibold cursor-pointer bg-transparent text-muted hover:text-white hover:bg-white/5 transition">
-        Cancel
-      </button>
     </div>
-  </div>
 
-  <!-- Unified Transfer Overlay -->
-  <div id="transferOverlay"
-    class="fixed inset-0 bg-bg/95 backdrop-blur-xl z-[1000] hidden flex items-center justify-center p-6">
-    <div class="w-full max-w-sm scale-95 opacity-0 transition-all duration-300" id="transferCard">
-      <div class="text-center mb-10">
-        <div id="transferIcon"
-          class="w-20 h-20 mx-auto mb-6 bg-white/[0.03] border border-white/10 rounded-3xl flex items-center justify-center transition-all duration-500">
-          <svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" />
+    <!-- Unified Transfer Overlay -->
+    <div id="transferOverlay"
+      class="fixed inset-0 bg-bg/95 backdrop-blur-3xl z-[1000] hidden flex items-center justify-center p-6 text-white">
+      <div class="w-full max-w-xs scale-95 opacity-0 transition-all duration-300" id="transferCard">
+        <div class="text-center mb-12">
+          <div id="transferIcon"
+            class="w-16 h-16 mx-auto mb-6 bg-white/[0.03] border border-white/[0.05] rounded-2xl flex items-center justify-center transition-all">
+            <svg class="w-6 h-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </div>
+          <h2 id="transferName" class="text-base font-semibold tracking-tight truncate mb-1">Transferring</h2>
+          <p id="transferStage" class="text-[9px] uppercase tracking-widest text-zinc-500 font-medium">Preparing...</p>
+        </div>
+
+        <div class="relative h-px mb-10 bg-white/[0.05] overflow-hidden">
+          <div id="transferBar" class="absolute inset-y-0 left-0 bg-white transition-all duration-300" style="width: 0%">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-12">
+          <div class="text-center">
+            <div class="text-[8px] uppercase tracking-widest text-zinc-600 mb-2 font-medium">Progress</div>
+            <div id="uiPercent" class="text-[10px] font-medium font-mono">0%</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[8px] uppercase tracking-widest text-zinc-600 mb-2 font-medium">Speed</div>
+            <div id="uiSpeed" class="text-[10px] font-medium font-mono">0 KB/s</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[8px] uppercase tracking-widest text-zinc-600 mb-2 font-medium">ETA</div>
+            <div id="uiEta" class="text-[10px] font-medium font-mono">--:--</div>
+          </div>
+        </div>
+
+        <button id="abortBtn" onclick="abortTransfer()"
+          class="w-full py-3.5 border border-white/[0.1] text-[9px] uppercase tracking-widest font-semibold hover:bg-white hover:text-black transition-colors rounded-full">
+          Cancel Transmission
+        </button>
+      </div>
+    </div>
+          Abort Transmission
+        </button>
+
+        <button
+          id="successCloseBtn"
+          onclick="closeTransferOverlay()"
+          class="hidden w-full py-4 bg-white text-black text-[10px] uppercase tracking-[0.3em] font-black transition-all"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+
+    <!-- Shared Upload Modal -->
+    <div
+      class="modal-overlay fixed inset-0 bg-bg/80 backdrop-blur-2xl z-[500] items-center justify-center p-6"
+      id="sharedOverlay"
+    >
+      <div
+        class="bg-card border border-border rounded-soft p-10 w-full max-w-[400px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.9)] animate-in slide-in-from-bottom-8 duration-500"
+      >
+        <div
+          class="w-20 h-20 bg-accent/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner"
+        >
+          <svg
+            class="w-10 h-10 text-accent"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"
+            />
           </svg>
         </div>
-        <h2 id="transferName" class="text-lg font-bold uppercase tracking-tight truncate mb-1">Transmission</h2>
-        <p id="transferStage" class="text-[10px] uppercase tracking-[0.3em] text-zinc-600 font-bold">Initializing...</p>
-      </div>
+        <h2 class="text-2xl font-black text-center mb-2 tracking-tight">
+          Shared Cloud
+        </h2>
+        <p
+          class="text-zinc-500 text-center text-[10px] uppercase tracking-[0.2em] font-black mb-10"
+        >
+          Public Network Pipeline
+        </p>
 
-      <div class="relative h-1 mb-8 bg-white/5 rounded-full overflow-hidden">
-        <div id="transferBar" class="absolute inset-y-0 left-0 bg-white transition-all duration-300" style="width: 0%">
+        <div
+          id="sharedDropArea"
+          class="border-2 border-dashed border-accent/20 bg-accent/5 rounded-soft py-14 px-4 cursor-pointer transition-all hover:bg-accent/10 hover:border-accent/40 flex flex-col items-center group"
+        >
+          <strong
+            class="text-white/80 group-hover:scale-110 transition-transform"
+            >Push to Shared</strong
+          >
+          <p
+            class="mt-2 text-[10px] uppercase tracking-widest text-zinc-600 font-black"
+          >
+            Direct Discovery Mode
+          </p>
         </div>
-      </div>
+        <input type="file" id="sharedFileInput" multiple class="hidden" />
 
-      <div class="grid grid-cols-3 gap-6 mb-12">
-        <div class="text-center">
-          <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Progress</div>
-          <div id="uiPercent" class="text-xs font-bold font-mono">0%</div>
-        </div>
-        <div class="text-center border-x border-white/5">
-          <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Speed</div>
-          <div id="uiSpeed" class="text-xs font-bold font-mono">0 MB/s</div>
-        </div>
-        <div class="text-center">
-          <div class="text-[8px] uppercase tracking-[0.2em] text-zinc-600 mb-2 font-bold">Time Left</div>
-          <div id="uiEta" class="text-xs font-bold font-mono">--:--</div>
-        </div>
-      </div>
-
-      <button id="abortBtn" onclick="abortTransfer()"
-        class="w-full py-4 border border-white/10 text-[10px] uppercase tracking-[0.3em] font-black hover:bg-white hover:text-black transition-all">
-        Abort Transmission
-      </button>
-
-      <button id="successCloseBtn" onclick="closeTransferOverlay()"
-        class="hidden w-full py-4 bg-white text-black text-[10px] uppercase tracking-[0.3em] font-black transition-all">
-        Continue
-      </button>
-    </div>
-  </div>
-
-  <!-- Shared Upload Modal -->
-  <div class="modal-overlay fixed inset-0 bg-bg/75 backdrop-blur-sm z-[200] items-center justify-center"
-    id="sharedOverlay">
-    <div class="bg-card border border-border rounded-3xl p-10 w-[90%] max-w-[400px] shadow-2xl">
-      <h2 class="text-xl font-bold mb-2 flex items-center justify-center gap-2">
-        <svg class="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
-        </svg>
-        Shared Space
-      </h2>
-      <p class="text-muted text-sm -mt-0 mb-6">
-        Anyone on the network can see these files
-      </p>
-
-      <div id="sharedDropArea"
-        class="border-2 border-dashed border-border bg-bg/30 rounded-2xl py-8 px-4 cursor-pointer transition-all hover:border-accent hover:bg-accent-soft flex flex-col items-center">
-        <strong>Tap to Upload</strong>
-        <p class="mt-1 text-xs opacity-70">or drag files here (Max 2 GB)</p>
-      </div>
-      <input type="file" id="sharedFileInput" multiple class="hidden" />
-
-      <button onclick="closeSharedOverlay()"
-        class="w-full py-3 mt-4 rounded-xl font-semibold cursor-pointer bg-transparent text-muted hover:text-white hover:bg-white/5 transition">
-        Close
-      </button>
-    </div>
-  </div>
-
-  <!-- LAN Request Modal -->
-  <div id="lanRequestModal"
-    class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[500] hidden flex items-center justify-center p-6">
-    <div class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl">
-      <div class="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-        <svg class="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-      </div>
-      <h3 class="text-xl font-bold text-center mb-2">Incoming LAN Files</h3>
-      <p class="text-slate-400 text-center text-sm mb-6" id="lanRequestInfo">
-        Somebody is sending you files
-      </p>
-      <div class="flex gap-3">
-        <button onclick="respondToLan(false)"
-          class="flex-1 py-3 px-4 rounded-xl border border-border font-semibold hover:bg-white/5 transition">
-          Decline
-        </button>
-        <button onclick="respondToLan(true)"
-          class="flex-1 py-3 px-4 rounded-xl bg-accent text-black font-bold hover:bg-white transition">
-          Accept
+        <button
+          onclick="closeSharedOverlay()"
+          class="w-full py-5 mt-6 rounded-soft font-black text-[10px] uppercase tracking-[0.2em] cursor-pointer bg-white/5 text-zinc-500 hover:text-white transition"
+        >
+          Close Space
         </button>
       </div>
     </div>
-  </div>
 
-  <!-- Connect Device Modal -->
-  <div id="connectModal"
-    class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6">
+    <!-- LAN Request Modal -->
     <div
-      class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl scale-95 opacity-0 transition-all duration-300"
-      id="connectModalCard">
-      <h3 class="text-xl font-bold mb-1 uppercase tracking-tight">Connect Device</h3>
-      <p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-8">Scan QR or enter URL on another device</p>
-
-      <div id="lanQr" class="bg-white p-4 rounded-2xl mx-auto mb-8 w-max shadow-xl"></div>
-
+      id="lanRequestModal"
+      class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[500] hidden flex items-center justify-center p-6"
+    >
       <div
-        class="bg-bg border border-border rounded-xl px-4 py-3 mb-8 flex items-center justify-between gap-4 cursor-pointer hover:border-white transition-colors group"
-        onclick="copyConnectUrl()">
-        <span id="lanUrlText" class="text-xs text-zinc-400 truncate group-hover:text-white">Loading URL...</span>
-        <svg class="w-4 h-4 text-zinc-600 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-        </svg>
+        class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl"
+      >
+        <div
+          class="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6"
+        >
+          <svg
+            class="w-8 h-8 text-accent"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-center mb-2">Incoming LAN Files</h3>
+        <p class="text-slate-400 text-center text-sm mb-6" id="lanRequestInfo">
+          Somebody is sending you files
+        </p>
+        <div class="flex gap-3">
+          <button
+            onclick="respondToLan(false)"
+            class="flex-1 py-3 px-4 rounded-xl border border-border font-semibold hover:bg-white/5 transition"
+          >
+            Decline
+          </button>
+          <button
+            onclick="respondToLan(true)"
+            class="flex-1 py-3 px-4 rounded-xl bg-accent text-black font-bold hover:bg-white transition"
+          >
+            Accept
+          </button>
+        </div>
       </div>
+    </div>
 
-      <button onclick="closeConnectModal()"
-        class="w-full py-3 rounded-xl border border-border font-bold text-[10px] uppercase tracking-widest hover:bg-white/5 transition">
-        Close Window
+    <!-- Connect Device Modal -->
+    <div
+      id="connectModal"
+      class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6"
+    >
+      <div
+        class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl scale-95 opacity-0 transition-all duration-300"
+        id="connectModalCard"
+      >
+        <h3 class="text-xl font-bold mb-1 uppercase tracking-tight">
+          Connect Device
+        </h3>
+        <p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-8">
+          Scan QR or enter URL on another device
+        </p>
+
+        <div
+          id="lanQr"
+          class="bg-white p-4 rounded-2xl mx-auto mb-8 w-max shadow-xl"
+        ></div>
+
+        <div
+          class="bg-bg border border-border rounded-xl px-4 py-3 mb-8 flex items-center justify-between gap-4 cursor-pointer hover:border-white transition-colors group"
+          onclick="copyConnectUrl()"
+        >
+          <span
+            id="lanUrlText"
+            class="text-xs text-zinc-400 truncate group-hover:text-white"
+            >Loading URL...</span
+          >
+          <svg
+            class="w-4 h-4 text-zinc-600 group-hover:text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+            />
+          </svg>
+        </div>
+
+        <button
+          onclick="closeConnectModal()"
+          class="w-full py-3 rounded-xl border border-border font-bold text-[10px] uppercase tracking-widest hover:bg-white/5 transition"
+        >
+          Close Window
+        </button>
+      </div>
+    </div>
+
+    <!-- Name Change Modal -->
+    <div
+      id="nameModal"
+      class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6"
+    >
+      <div
+        class="bg-card border border-white/[0.05] rounded-soft-lg p-8 w-full max-w-sm shadow-2xl scale-95 opacity-0 transition-all duration-300"
+        id="nameModalCard"
+      >
+        <h3 class="text-xl font-semibold tracking-tight text-white mb-1">Identity</h3>
+        <p class="text-zinc-500 text-xs font-medium mb-8">
+          Update how you appear on the network
+        </p>
+
+        <div class="relative mb-8">
+          <input
+            type="text"
+            id="newNameInput"
+            class="w-full bg-white/[0.02] border border-white/[0.05] rounded-full px-5 py-3 outline-none focus:border-white transition-colors text-white text-sm"
+            placeholder="Name"
+            maxlength="20"
+          />
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            onclick="closeNameModal()"
+            class="flex-1 py-3 font-semibold text-[10px] uppercase tracking-widest text-zinc-500 hover:text-white transition"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="saveNameFromModal()"
+            class="flex-1 py-3 rounded-full bg-white text-black font-semibold text-[10px] uppercase tracking-widest hover:opacity-90 transition"
+          >
+            Update
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification -->
+
+    <!-- Notification -->
+    <div
+      id="notif"
+      class="fixed top-6 right-6 z-[300] bg-card border border-accent rounded-2xl p-5 w-80 shadow-2xl opacity-0 -translate-y-5 scale-95 transition-all duration-400 pointer-events-none"
+      style="
+        transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      "
+    >
+      <div class="flex items-center gap-3 mb-4 max-w-full">
+        <div class="flex-shrink-0 w-6 h-6 text-accent">
+          <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3"
+            />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <span id="notifTitle" class="block font-medium text-sm"
+            >New File Received</span
+          >
+          <span id="notifSub" class="block text-xs text-muted truncate"
+            >filename.ext</span
+          >
+        </div>
+      </div>
+      <button
+        onclick="downloadNotifFile()"
+        class="w-full py-2.5 rounded-xl font-semibold bg-accent text-white cursor-pointer hover:bg-amber-600 transition"
+      >
+        Download
       </button>
     </div>
-  </div>
 
-  <!-- Name Change Modal -->
-  <div id="nameModal"
-    class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6">
+    <!-- Toast -->
     <div
-      class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl scale-95 transition-all duration-300"
-      id="nameModalCard">
-      <h3 class="text-xl font-bold mb-1">Display Name</h3>
-      <p class="text-muted text-sm mb-6">How others will see you on the network</p>
-
-      <div class="relative mb-6">
-        <input type="text" id="newNameInput"
-          class="w-full bg-bg border border-border rounded-xl px-4 py-3 outline-none focus:border-accent transition text-white"
-          placeholder="Enter your name" maxlength="20">
-      </div>
-
-      <div class="flex gap-3">
-        <button onclick="closeNameModal()"
-          class="flex-1 py-3 rounded-xl border border-border font-semibold hover:bg-white/5 transition">
-          Cancel
-        </button>
-        <button onclick="saveNameFromModal()"
-          class="flex-1 py-3 rounded-xl bg-accent text-black font-bold hover:bg-white/90 transition shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-          Save
-        </button>
-      </div>
+      id="toast"
+      class="fixed bottom-24 left-1/2 -translate-x-1/2 translate-y-5 bg-accent text-white px-5 py-2.5 rounded-full text-sm font-semibold z-[400] opacity-0 transition-all duration-300 pointer-events-none shadow-lg"
+    >
+      Copied to clipboard!
     </div>
-  </div>
 
-  <!-- Notification -->
-
-  <!-- Notification -->
-  <div id="notif"
-    class="fixed top-6 right-6 z-[300] bg-card border border-accent rounded-2xl p-5 w-80 shadow-2xl opacity-0 -translate-y-5 scale-95 transition-all duration-400 pointer-events-none"
-    style="
-        transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      ">
-    <div class="flex items-center gap-3 mb-4 max-w-full">
-      <div class="flex-shrink-0 w-6 h-6 text-accent">
-        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3" />
-        </svg>
-      </div>
-      <div class="min-w-0">
-        <span id="notifTitle" class="block font-medium text-sm">New File Received</span>
-        <span id="notifSub" class="block text-xs text-muted truncate">filename.ext</span>
-      </div>
-    </div>
-    <button onclick="downloadNotifFile()"
-      class="w-full py-2.5 rounded-xl font-semibold bg-accent text-white cursor-pointer hover:bg-amber-600 transition">
-      Download
-    </button>
-  </div>
-
-  <!-- Toast -->
-  <div id="toast"
-    class="fixed bottom-24 left-1/2 -translate-x-1/2 translate-y-5 bg-accent text-white px-5 py-2.5 rounded-full text-sm font-semibold z-[400] opacity-0 transition-all duration-300 pointer-events-none shadow-lg">
-    Copied to clipboard!
-  </div>
-
-  <script src="/app.js"></script>
-</body>
-
+    <script src="/app.js"></script>
+  </body>
 </html>

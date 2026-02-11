@@ -1,155 +1,239 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GoShare — Fast File Sharing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              bg: "#0d0d12",
+              surface: "#18181b",
+              border: "rgba(255, 255, 255, 0.08)",
+              subtle: "#3f3f46",
+              accent: "#818cf8",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&display=swap");
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GoShare — Fast File Sharing</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            bg: '#09090b',
-            surface: '#121214',
-            border: '#1f1f22',
-            subtle: '#3f3f46',
-            accent: '#ffffff',
-          }
-        }
+      body {
+        font-family: "Hanken Grotesk", system-ui, sans-serif;
       }
-    }
-  </script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&display=swap');
 
-    body {
-      font-family: 'Hanken Grotesk', system-ui, sans-serif;
-    }
+      .hero-text {
+        letter-spacing: -0.05em;
+      }
 
-    .hero-text {
-      letter-spacing: -0.04em;
-    }
+      .grid-container {
+        background-image:
+          radial-gradient(
+            circle at 50% 50%,
+            rgba(129, 140, 248, 0.03) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px
+          );
+        background-size:
+          100% 100%,
+          60px 60px,
+          60px 60px;
+      }
+    </style>
+  </head>
 
-    .grid-container {
-      background-image:
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
-  </style>
-</head>
+  <body class="bg-bg min-h-screen text-white select-none">
+    <!-- Navbar -->
+    <nav class="border-b border-white/[0.04]">
+      <div
+        class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between"
+      >
+        <a
+          href="/"
+          class="font-semibold text-sm tracking-tight hover:opacity-70 transition"
+          ><span class="text-blue-500">go</span>share</a
+        >
+        <div class="flex items-center gap-6">
+          <a
+            href="/lan.html"
+            class="text-zinc-500 hover:text-white text-xs transition"
+            >LAN</a
+          >
+          <a
+            href="/p2p.html"
+            class="text-zinc-500 hover:text-white text-xs transition"
+            >P2P</a
+          >
+          <a
+            href="https://github.com/tanvir-cpp/GoShare"
+            target="_blank"
+            class="text-zinc-500 hover:text-white transition"
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </nav>
 
-<body class="bg-bg min-h-screen text-white">
+    <!-- Hero -->
+    <section
+      class="max-w-5xl mx-auto px-6 pt-20 sm:pt-32 pb-16 sm:pb-24 text-center grid-container relative border-x border-white/[0.04]"
+    >
+      <div
+        class="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/[0.05] rounded-full text-[10px] font-medium tracking-wide text-zinc-400 mb-8 sm:mb-10"
+      >
+        <span class="w-1 h-1 rounded-full bg-accent animate-pulse"></span>
+        <span>Experimental Protocol v2.0</span>
+      </div>
 
-  <!-- Navbar -->
-  <nav class="border-b border-border">
-    <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-      <a href="/" class="font-bold text-sm tracking-tight">GoShare</a>
-      <div class="flex items-center gap-5">
-        <a href="/lan.html" class="text-zinc-400 hover:text-white text-xs transition">LAN</a>
-        <a href="/p2p.html" class="text-zinc-400 hover:text-white text-xs transition">P2P</a>
-        <a href="https://github.com/tanvir-cpp/GoShare" target="_blank"
-          class="text-zinc-500 hover:text-zinc-300 transition">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
-          </svg>
+      <h1
+        class="text-5xl sm:text-8xl font-semibold hero-text leading-[0.9] mb-8 tracking-tighter"
+      >
+        Share files<br /><span class="opacity-20">instantly.</span>
+      </h1>
+
+      <p
+        class="text-zinc-500 text-sm sm:text-base max-w-sm mx-auto mb-12 leading-relaxed font-normal"
+      >
+        Peer-to-peer file transfers for the modern web. No accounts, no delays,
+        purely direct.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+        <a
+          href="/lan.html"
+          class="px-10 py-4 bg-white text-black text-xs font-semibold rounded-full transition-all hover:opacity-90 active:scale-95"
+        >
+          Start Sharing
         </a>
+        <div class="flex gap-6">
+          <a
+            href="/lan.html"
+            class="text-xs font-medium text-zinc-500 hover:text-white transition-all"
+            >Nearby</a
+          >
+          <a
+            href="/p2p.html"
+            class="text-xs font-medium text-zinc-500 hover:text-white transition-all"
+            >Anywhere</a
+          >
+        </div>
       </div>
-    </div>
-  </nav>
+    </section>
 
-  <!-- Hero -->
-  <section class="max-w-5xl mx-auto px-6 pt-32 pb-24 text-center grid-container relative border-x border-border/50">
-    <div
-      class="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-8">
-      <span>Protocol v1.0</span>
-      <span class="w-1 h-1 rounded-full bg-white"></span>
-      <span>Encrypted</span>
-    </div>
-
-    <h1 class="text-6xl sm:text-7xl font-extrabold hero-text leading-[0.9] mb-8">
-      Share Files<br><span class="text-white/40">Instantly.</span>
-    </h1>
-
-    <p class="text-zinc-500 text-sm sm:text-base max-w-sm mx-auto mb-12 leading-relaxed font-medium">
-      The fastest way to send files to any device. No accounts, no cloud storage, just pure peer-to-peer sharing.
-    </p>
-
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
-      <a href="/lan.html"
-        class="group relative px-12 py-4 bg-white text-black text-xs font-extrabold uppercase tracking-widest transition-all hover:bg-zinc-200">
-        <span class="relative z-10">Start Sharing</span>
+    <!-- Features Core -->
+    <section
+      class="max-w-5xl mx-auto border-t border-white/[0.04] grid sm:grid-cols-3"
+    >
+      <div class="p-12 border-r border-white/[0.04]">
         <div
-          class="absolute inset-0 translate-x-1 translate-y-1 border border-white -z-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+          class="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 mb-6 font-mono"
+        >
+          01 — LAN
         </div>
-      </a>
-      <div class="flex gap-4">
-        <a href="/lan.html"
-          class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition">Nearby
-          Mode</a>
-        <a href="/p2p.html"
-          class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition">Anywhere
-          Mode</a>
+        <h3 class="font-semibold text-sm mb-3">Automatic Discovery</h3>
+        <p class="text-zinc-500 text-xs leading-relaxed">
+          Instant device detection on your local network. Zero configuration
+          required.
+        </p>
       </div>
-    </div>
-  </section>
-
-  <!-- Features Core -->
-  <section class="max-w-5xl mx-auto border-t border-border/50 grid sm:grid-cols-3">
-    <div class="p-10 border-r border-border/50">
-      <div class="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-4">Nearby Sharing</div>
-      <h3 class="font-bold text-sm mb-3">AirDrop for the Web</h3>
-      <p class="text-zinc-500 text-xs leading-relaxed font-medium">Automatic device detection on your local network. No
-        setup required.</p>
-    </div>
-    <div class="p-10 border-r border-border/50">
-      <div class="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-4">Anywhere Sharing</div>
-      <h3 class="font-bold text-sm mb-3">Secure P2P Links</h3>
-      <p class="text-zinc-500 text-xs leading-relaxed font-medium">Share files with anyone using a secure link. Direct
-        transfer through your browser.</p>
-    </div>
-    <div class="p-10">
-      <div class="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-4">No Limits</div>
-      <h3 class="font-bold text-sm mb-3">Unlimited File Sizes</h3>
-      <p class="text-zinc-500 text-xs leading-relaxed font-medium">Fast transfers with no size limits. Designed for
-        everything from photos to large datasets.</p>
-    </div>
-  </section>
-
-  <!-- How it works -->
-  <section class="border-t border-border">
-    <div class="max-w-5xl mx-auto px-6 py-16">
-      <h2 class="text-lg font-bold text-center mb-10">How it works</h2>
-      <div class="grid sm:grid-cols-3 gap-8 text-center">
-        <div>
-          <div class="text-2xl font-bold text-zinc-700 mb-2">1</div>
-          <h3 class="text-sm font-semibold mb-1">Open GoShare</h3>
-          <p class="text-zinc-500 text-xs">On any device with a browser. No install needed.</p>
+      <div class="p-12 border-r border-white/[0.04]">
+        <div
+          class="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 mb-6 font-mono"
+        >
+          02 — P2P
         </div>
-        <div>
-          <div class="text-2xl font-bold text-zinc-700 mb-2">2</div>
-          <h3 class="text-sm font-semibold mb-1">Pick a file</h3>
-          <p class="text-zinc-500 text-xs">Drag it onto a device (LAN) or generate a share link (P2P).</p>
+        <h3 class="font-semibold text-sm mb-3">Secure Pipelines</h3>
+        <p class="text-zinc-500 text-xs leading-relaxed">
+          Direct WebRTC-encrypted connections anywhere in the world via simple
+          links.
+        </p>
+      </div>
+      <div class="p-12">
+        <div
+          class="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 mb-6 font-mono"
+        >
+          03 — SIZE
         </div>
-        <div>
-          <div class="text-2xl font-bold text-zinc-700 mb-2">3</div>
-          <h3 class="text-sm font-semibold mb-1">Done</h3>
-          <p class="text-zinc-500 text-xs">Files transfer directly. No upload, no waiting, no account.</p>
+        <h3 class="font-semibold text-sm mb-3">Unlimited Scale</h3>
+        <p class="text-zinc-500 text-xs leading-relaxed">
+          No cloud intermediation means no storage limits. Send terabytes as
+          easily as kilobytes.
+        </p>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="border-t border-white/[0.04]">
+      <div class="max-w-5xl mx-auto px-6 py-20">
+        <h2 class="text-lg font-semibold text-center mb-16 tracking-tight">
+          Process
+        </h2>
+        <div class="grid sm:grid-cols-3 gap-12 text-center">
+          <div>
+            <div class="text-xs font-semibold text-zinc-700 mb-6 font-mono">
+              STEP 01
+            </div>
+            <h3 class="text-sm font-semibold mb-2">Initialize</h3>
+            <p class="text-zinc-500 text-xs leading-relaxed">
+              Open GoShare on any device with a modern browser. No installation
+              needed.
+            </p>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-zinc-700 mb-6 font-mono">
+              STEP 02
+            </div>
+            <h3 class="text-sm font-semibold mb-2">Connect</h3>
+            <p class="text-zinc-500 text-xs leading-relaxed">
+              Select a local peer or generate a secure global pipeline link.
+            </p>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-zinc-700 mb-6 font-mono">
+              STEP 03
+            </div>
+            <h3 class="text-sm font-semibold mb-2">Transfer</h3>
+            <p class="text-zinc-500 text-xs leading-relaxed">
+              Files stream directly between devices. Minimal latency, maximum
+              privacy.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <footer class="border-t border-border">
-    <div class="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
-      <span class="text-zinc-600 text-xs">GoShare</span>
-      <span class="text-zinc-700 text-xs">Open source file sharing</span>
-    </div>
-  </footer>
-
-</body>
-
+    <footer class="border-t border-white/[0.04]">
+      <div
+        class="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between"
+      >
+        <span
+          class="text-zinc-600 text-[10px] font-medium tracking-widest uppercase"
+          >GoShare — P2P Sharing</span
+        >
+        <span
+          class="text-zinc-700 text-[10px] font-medium tracking-widest uppercase"
+          >Built with Go & WebRTC</span
+        >
+      </div>
+    </footer>
+  </body>
 </html>
