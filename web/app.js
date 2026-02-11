@@ -1,3 +1,4 @@
+const API_BASE = "";
 const myId =
   localStorage.getItem("device_id") ||
   (() => {
@@ -46,18 +47,20 @@ function getDeviceSvg(iconName) {
   return deviceIcons[iconName] || deviceIcons.fox;
 }
 
+// Initialize (no top-level await — use .then() to stay compatible with non-module scripts)
 register().then(() => {
   connectSSE();
   loadSharedFiles();
   setupDragDrop();
   displayShareUrl();
-  window.addEventListener("resize", renderPeers);
+  globalThis.addEventListener("resize", renderPeers);
 });
 
 async function register() {
   try {
-    const r = await fetch("/api/register", {
+    const r = await fetch(API_BASE + "/api/register", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: myId }),
     });
     if (!r.ok) throw new Error("status " + r.status);
@@ -75,7 +78,7 @@ async function register() {
 
 function connectSSE() {
   if (evtSource) evtSource.close();
-  evtSource = new EventSource("/api/events?id=" + myId);
+  evtSource = new EventSource(API_BASE + "/api/events?id=" + myId);
   evtSource.addEventListener("peers", (e) => {
     peers = {};
     const data = JSON.parse(e.data);
@@ -118,7 +121,7 @@ function renderPeers() {
 
   // Update device count
   document.getElementById("deviceCount").textContent =
-    ids.length + " device" + (ids.length !== 1 ? "s" : "") + " online";
+    ids.length + " device" + (ids.length === 1 ? "" : "s") + " online";
 
   const centerX = area.offsetWidth / 2;
   const centerY = area.offsetHeight / 2;
@@ -130,16 +133,15 @@ function renderPeers() {
     const y = centerY + R * Math.sin(angle);
     const p = peers[id];
     const el = document.createElement("div");
-    el.className =
-      "peer absolute w-[clamp(70px,20vw,84px)] h-[clamp(70px,20vw,84px)] rounded-2xl bg-card border border-border flex flex-col items-center justify-center cursor-pointer transition-all shadow-md hover:border-accent hover:bg-card-hover hover:shadow-xl";
+    el.className = "peer";
     el.style.cssText =
       "left:" + x + "px;top:" + y + "px;transform:translate(-50%,-50%)";
     el.innerHTML =
-      '<div class="w-6 h-6 text-accent">' +
+      '<div class="peer-icon">' +
       getDeviceSvg(p.icon) +
-      '</div><div class="text-[clamp(0.55rem,1.8vw,0.7rem)] text-white mt-1 font-semibold max-w-[90%] whitespace-nowrap overflow-hidden text-ellipsis">' +
+      '</div><div class="peer-name">' +
       p.name +
-      '</div><div class="text-[0.55rem] text-muted">' +
+      '</div><div class="peer-type">' +
       p.type +
       "</div>";
     el.onclick = () => {
@@ -214,45 +216,49 @@ function upload(files, to, prefix) {
     toast("Upload failed!");
     prog.classList.add("hidden");
   };
-  xhr.open("POST", "/api/upload");
+  xhr.open("POST", API_BASE + "/api/upload");
   xhr.send(fd);
 }
 
 async function loadSharedFiles() {
-  const r = await fetch("/api/files");
-  const files = await r.json();
-  const bar = document.getElementById("sharedBar");
-  bar.querySelectorAll(".file-chip").forEach((el) => el.remove());
-  files.forEach((f) => {
-    const chip = document.createElement("div");
-    chip.className =
-      "file-chip flex-shrink-0 flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2 transition-all hover:border-accent hover:bg-card-hover max-w-[180px] cursor-pointer";
-    chip.title = "Click to download " + f.name;
-    chip.innerHTML =
-      '<span class="text-accent w-4 h-4 flex-shrink-0"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></span>' +
-      '<div class="flex-1 min-w-0 text-left">' +
-      '<span class="block text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">' +
-      f.name +
-      "</span>" +
-      '<span class="text-[0.65rem] text-muted">' +
-      formatBytes(f.size) +
-      "</span>" +
-      "</div>" +
-      '<span class="text-muted text-lg leading-none cursor-pointer hover:text-danger" title="Delete file" onclick="event.stopPropagation();delFile(\'' +
-      f.name +
-      "')\">×</span>";
-    chip.onclick = () =>
-      (location.href = "/download/" + f.name + "?id=" + myId);
-    bar.appendChild(chip);
-  });
+  try {
+    const r = await fetch(API_BASE + "/api/files");
+    const files = await r.json();
+    const bar = document.getElementById("sharedBar");
+    bar.querySelectorAll(".file-chip").forEach((el) => el.remove());
+    if (!files || !Array.isArray(files)) return;
+    files.forEach((f) => {
+      const chip = document.createElement("div");
+      chip.className = "file-chip";
+      chip.title = "Click to download " + f.name;
+      chip.innerHTML =
+        '<span class="chip-icon"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></span>' +
+        '<div class="chip-info">' +
+        '<span class="chip-name">' +
+        f.name +
+        "</span>" +
+        '<span class="chip-size">' +
+        formatBytes(f.size) +
+        "</span>" +
+        "</div>" +
+        '<span class="chip-delete" title="Delete file" onclick="event.stopPropagation();delFile(\'' +
+        f.name.replace(/'/g, "\\'") +
+        "')\">\u00d7</span>";
+      chip.onclick = () =>
+        (location.href = API_BASE + "/download/" + encodeURIComponent(f.name) + "?id=" + myId);
+      bar.appendChild(chip);
+    });
+  } catch (e) {
+    console.error("Failed to load shared files:", e);
+  }
 }
 
 async function delFile(n) {
-  await fetch("/api/delete/" + n, { method: "DELETE" });
+  await fetch(API_BASE + "/api/delete/" + encodeURIComponent(n), { method: "DELETE" });
   loadSharedFiles();
 }
 function downloadNotifFile() {
-  if (notifFile) location.href = "/download/" + notifFile + "?id=" + myId;
+  if (notifFile) location.href = API_BASE + "/download/" + encodeURIComponent(notifFile) + "?id=" + myId;
   document.getElementById("notif").classList.remove("notif-show");
 }
 function toast(m) {
@@ -336,12 +342,12 @@ function preventDefaults(e) {
 }
 
 function displayShareUrl() {
-  const url = window.location.href;
+  const url = globalThis.location.href;
   document.getElementById("shareUrl").textContent = url;
 }
 
 function copyUrl() {
-  const url = window.location.href;
+  const url = globalThis.location.href;
   navigator.clipboard
     .writeText(url)
     .then(() => {
@@ -353,8 +359,20 @@ function copyUrl() {
       input.value = url;
       document.body.appendChild(input);
       input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
+      try {
+        document.execCommand("copy");
+      } catch (e) {
+        console.error("Copy failed", e);
+      }
+      input.remove();
       toast("URL copied!");
     });
 }
+
+// Expose functions to global scope for HTML onclick handlers
+globalThis.closeModal = closeModal;
+globalThis.openSharedUpload = openSharedUpload;
+globalThis.closeSharedOverlay = closeSharedOverlay;
+globalThis.copyUrl = copyUrl;
+globalThis.downloadNotifFile = downloadNotifFile;
+globalThis.delFile = delFile;

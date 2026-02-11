@@ -15,11 +15,16 @@ import (
 
 var SharedDir = "shared_files"
 
+const (
+	headerContentType = "Content-Type"
+	mimeJSON          = "application/json"
+)
+
 func Cors(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", headerContentType)
 		if r.Method == "OPTIONS" {
 			return
 		}
@@ -59,7 +64,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		discovery.Devices[id].IP = r.RemoteAddr
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	json.NewEncoder(w).Encode(discovery.Devices[id])
 }
 
@@ -76,7 +81,7 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set(headerContentType, "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
@@ -174,9 +179,18 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
-		f, _ := fh.Open()
+		f, err := fh.Open()
+		if err != nil {
+			log.Printf("Failed to open uploaded file %s: %v", fh.Filename, err)
+			continue
+		}
 		safeName := filepath.Base(fh.Filename)
-		dst, _ := os.Create(filepath.Join(uploadDir, safeName))
+		dst, err := os.Create(filepath.Join(uploadDir, safeName))
+		if err != nil {
+			f.Close()
+			log.Printf("Failed to create file %s: %v", safeName, err)
+			continue
+		}
 		io.Copy(dst, f)
 		f.Close()
 		dst.Close()
@@ -207,24 +221,39 @@ func HandleListFiles(w http.ResponseWriter, r *http.Request) {
 	publicDir := filepath.Join(SharedDir, "public")
 	os.MkdirAll(publicDir, 0755)
 	entries, _ := os.ReadDir(publicDir)
-	var list []map[string]interface{}
+	list := make([]map[string]interface{}, 0)
 	for _, e := range entries {
 		if !e.IsDir() {
-			info, _ := e.Info()
+			info, err := e.Info()
+			if err != nil {
+				continue
+			}
 			list = append(list, map[string]interface{}{
 				"name": e.Name(),
 				"size": info.Size(),
 			})
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	json.NewEncoder(w).Encode(list)
 }
 
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Base(r.URL.Path)
+	if name == "" || name == "." || name == ".." {
+		http.Error(w, "invalid filename", 400)
+		return
+	}
 	// Only allow deleting from public for now to prevent unauthorized deletion of private files
-	os.Remove(filepath.Join(SharedDir, "public", name))
+	filePath := filepath.Join(SharedDir, "public", name)
+	if err := os.Remove(filePath); err != nil {
+		if os.IsNotExist(err) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "failed to delete", 500)
+		return
+	}
 	discovery.Broadcast("shared-update", nil, "")
 	w.WriteHeader(200)
 }
@@ -259,6 +288,6 @@ func HandleGetDevice(w http.ResponseWriter, r *http.Request) {
 	id := filepath.Base(r.URL.Path)
 	discovery.Lock.RLock()
 	defer discovery.Lock.RUnlock()
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(headerContentType, mimeJSON)
 	json.NewEncoder(w).Encode(discovery.Devices[id])
 }

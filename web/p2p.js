@@ -1,3 +1,4 @@
+const API_BASE = "";
 // ─── P2P WebRTC File Sharing ───
 const CHUNK_SIZE = 64 * 1024; // 64 KB chunks
 const ICE_SERVERS = [
@@ -18,7 +19,7 @@ let pendingCandidates = [];
 
 // ─── Init ───
 (function init() {
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(globalThis.location.search);
   roomId = params.get("room");
 
   if (roomId) {
@@ -60,14 +61,14 @@ function setupFileInput() {
   ["dragenter", "dragover"].forEach((evt) =>
     dropArea.addEventListener(
       evt,
-      () => dropArea.classList.add("border-accent", "bg-accent/5"),
+      () => dropArea.classList.add("drag-over"),
       false,
     ),
   );
   ["dragleave", "drop"].forEach((evt) =>
     dropArea.addEventListener(
       evt,
-      () => dropArea.classList.remove("border-accent", "bg-accent/5"),
+      () => dropArea.classList.remove("drag-over"),
       false,
     ),
   );
@@ -107,12 +108,12 @@ async function createRoom() {
   btn.textContent = "Creating link…";
 
   try {
-    const res = await fetch("/api/p2p/create", { method: "POST" });
+    const res = await fetch(API_BASE + "/api/p2p/create", { method: "POST" });
     const data = await res.json();
     roomId = data.room;
 
     // Show share link + QR
-    const shareLink = window.location.origin + "/p2p.html?room=" + roomId;
+    const shareLink = globalThis.location.origin + globalThis.location.pathname + "?room=" + roomId;
     document.getElementById("shareUrl").textContent = shareLink;
 
     const qrEl = document.getElementById("qrcode");
@@ -121,8 +122,8 @@ async function createRoom() {
       text: shareLink,
       width: 200,
       height: 200,
-      colorDark: "#8b5cf6",
-      colorLight: "#09090b",
+      colorDark: "#ffffff",
+      colorLight: "#000000",
       correctLevel: QRCode.CorrectLevel.M,
     });
 
@@ -171,7 +172,7 @@ function setupSenderConnection() {
       pc.iceConnectionState === "completed"
     ) {
       document.getElementById("waitingStatus").innerHTML =
-        '<div class="w-2 h-2 rounded-full bg-green-500"></div> <span class="text-green-400">Receiver connected!</span>';
+        '<div class="waiting-dot" style="background:var(--success);animation:none"></div> <span style="color:var(--success)">Receiver connected!</span>';
     }
   };
 
@@ -188,7 +189,7 @@ function setupSenderConnection() {
 
 // ─── Sender: Send File via DataChannel ───
 function sendFile() {
-  if (!selectedFile || !dataChannel || dataChannel.readyState !== "open")
+  if (selectedFile === null || dataChannel?.readyState !== "open")
     return;
 
   // Send metadata first
@@ -205,7 +206,6 @@ function sendFile() {
   const BUFFER_HIGH = 2 * 1024 * 1024; // 2MB
   dataChannel.bufferedAmountLowThreshold = 512 * 1024; // 512KB
 
-  const fileReader = new FileReader();
   let offset = 0;
   const fileSize = selectedFile.size;
 
@@ -215,11 +215,6 @@ function sendFile() {
     document.getElementById("progressPercent").textContent = percent + "%";
     document.getElementById("progressDetail").textContent =
       formatBytes(offset) + " / " + formatBytes(fileSize);
-  }
-
-  function readAndSend() {
-    const slice = selectedFile.slice(offset, offset + CHUNK_SIZE);
-    fileReader.readAsArrayBuffer(slice);
   }
 
   function sendNextChunk() {
@@ -236,25 +231,24 @@ function sendFile() {
     if (dataChannel.bufferedAmount > BUFFER_HIGH) {
       dataChannel.onbufferedamountlow = () => {
         dataChannel.onbufferedamountlow = null;
-        readAndSend();
+        sendNextChunk();
       };
       return;
     }
 
-    readAndSend();
+    const slice = selectedFile.slice(offset, offset + CHUNK_SIZE);
+    slice.arrayBuffer()
+      .then(buffer => {
+        if (dataChannel.readyState !== "open") return;
+        dataChannel.send(buffer);
+        offset += buffer.byteLength;
+        updateProgress();
+        sendNextChunk();
+      })
+      .catch(err => {
+        console.error("File read error", err);
+      });
   }
-
-  fileReader.onload = (e) => {
-    if (dataChannel.readyState !== "open") return;
-    dataChannel.send(e.target.result);
-    offset += e.target.result.byteLength;
-    updateProgress();
-    sendNextChunk();
-  };
-
-  fileReader.onerror = () => {
-    console.error("File read error");
-  };
 
   sendNextChunk();
 }
@@ -263,111 +257,110 @@ function sendFile() {
 async function startReceiver() {
   pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-  let receivedChunks = [];
-  let fileMeta = null;
-  let receivedSize = 0;
-
-  // Connection timeout — 30 seconds
   const connectTimeout = setTimeout(() => {
-    if (!dataChannel || dataChannel.readyState !== "open") {
+    if (dataChannel?.readyState !== "open") {
       showRecvError("Connection timed out. The sender may have closed the page.");
       stopPolling();
-      if (pc) pc.close();
+      pc?.close();
     }
   }, 30000);
 
   pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      sendSignal("ice-candidate", e.candidate);
-    }
+    if (e.candidate) sendSignal("ice-candidate", e.candidate);
   };
 
   pc.oniceconnectionstatechange = () => {
-    console.log("ICE state:", pc.iceConnectionState);
-    if (
-      pc.iceConnectionState === "failed" ||
-      pc.iceConnectionState === "disconnected"
-    ) {
+    if (pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") {
       showRecvError("Connection lost. Please try again.");
     }
   };
 
-  pc.ondatachannel = (e) => {
-    clearTimeout(connectTimeout);
-    console.log("Received data channel");
-    dataChannel = e.channel;
-    dataChannel.binaryType = "arraybuffer";
+  pc.ondatachannel = (e) => handleDataChannel(e, connectTimeout);
 
-    dataChannel.onmessage = (event) => {
-      // First message is metadata (JSON string)
-      if (!fileMeta && typeof event.data === "string") {
-        try {
-          fileMeta = JSON.parse(event.data);
-          document.getElementById("recvConnecting").classList.add("hidden");
-          document.getElementById("recvProgress").classList.remove("hidden");
-          document.getElementById("recvFileName").textContent = fileMeta.name;
-          document.getElementById("recvFileSize").textContent = formatBytes(
-            fileMeta.size,
-          );
-          return;
-        } catch (e) {
-          // Not JSON, treat as data
-        }
-      }
-
-      // Check for EOF
-      if (typeof event.data === "string" && event.data === "__EOF__") {
-        // File complete
-        const blob = new Blob(receivedChunks, {
-          type: fileMeta?.type || "application/octet-stream",
-        });
-        const url = URL.createObjectURL(blob);
-
-        document.getElementById("recvProgress").classList.add("hidden");
-        document.getElementById("recvDone").classList.remove("hidden");
-        document.getElementById("recvDoneFile").textContent =
-          (fileMeta?.name || "file") + " — " + formatBytes(blob.size);
-
-        const link = document.getElementById("recvDownloadLink");
-        link.href = url;
-        link.download = fileMeta?.name || "download";
-        link.onclick = () => {
-          // Auto-revoke after download starts
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-        };
-
-        stopPolling();
-        return;
-      }
-
-      // Binary data chunk
-      if (event.data instanceof ArrayBuffer) {
-        receivedChunks.push(event.data);
-        receivedSize += event.data.byteLength;
-
-        if (fileMeta) {
-          const percent = Math.min(
-            100,
-            Math.round((receivedSize / fileMeta.size) * 100),
-          );
-          document.getElementById("recvBar").style.width = percent + "%";
-          document.getElementById("recvPercent").textContent = percent + "%";
-        }
-      }
-    };
-
-    dataChannel.onclose = () => {
-      console.log("DataChannel closed");
-      if (!fileMeta || receivedSize < fileMeta.size) {
-        showRecvError(
-          "Transfer interrupted. The sender may have closed their browser.",
-        );
-      }
-    };
-  };
-
-  // Start polling for the sender's offer
   startPolling();
+}
+
+let receiverState = {
+  chunks: [],
+  meta: null,
+  size: 0
+};
+
+function handleDataChannel(e, timeout) {
+  clearTimeout(timeout);
+  dataChannel = e.channel;
+  dataChannel.binaryType = "arraybuffer";
+  dataChannel.onmessage = onReceiverMessage;
+  dataChannel.onclose = onReceiverClose;
+}
+
+function onReceiverMessage(event) {
+  const { meta, size } = handleIncomingMessage(
+    event,
+    receiverState.meta,
+    receiverState.chunks,
+    receiverState.size
+  );
+  if (meta) receiverState.meta = meta;
+  if (size !== undefined) receiverState.size = size;
+}
+
+function onReceiverClose() {
+  if (!receiverState.meta || receiverState.size < receiverState.meta.size) {
+    showRecvError("Transfer interrupted.");
+  }
+}
+
+function handleIncomingMessage(event, fileMeta, receivedChunks, receivedSize) {
+  if (!fileMeta && typeof event.data === "string") {
+    try {
+      const meta = JSON.parse(event.data);
+      updateRecvUI(meta);
+      return { meta };
+    } catch (err) {
+      console.warn("Metadata error", err);
+    }
+  }
+
+  if (event.data === "__EOF__") {
+    finalizeDownload(fileMeta, receivedChunks);
+    stopPolling();
+    return {};
+  }
+
+  if (event.data instanceof ArrayBuffer) {
+    receivedChunks.push(event.data);
+    const newSize = receivedSize + event.data.byteLength;
+    if (fileMeta) updateRecvProgress(newSize, fileMeta.size);
+    return { size: newSize };
+  }
+  return {};
+}
+
+function updateRecvUI(meta) {
+  document.getElementById("recvConnecting").classList.add("hidden");
+  document.getElementById("recvProgress").classList.remove("hidden");
+  document.getElementById("recvFileName").textContent = meta.name;
+  document.getElementById("recvFileSize").textContent = formatBytes(meta.size);
+}
+
+function updateRecvProgress(current, total) {
+  const percent = Math.min(100, Math.round((current / total) * 100));
+  document.getElementById("recvBar").style.width = percent + "%";
+  document.getElementById("recvPercent").textContent = percent + "%";
+}
+
+function finalizeDownload(fileMeta, chunks) {
+  const blob = new Blob(chunks, { type: fileMeta?.type || "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  document.getElementById("recvProgress").classList.add("hidden");
+  document.getElementById("recvDone").classList.remove("hidden");
+  document.getElementById("recvDoneFile").textContent = `${fileMeta?.name || "file"} — ${formatBytes(blob.size)}`;
+
+  const link = document.getElementById("recvDownloadLink");
+  link.href = url;
+  link.download = fileMeta?.name || "download";
+  link.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 function showRecvError(msg) {
@@ -379,7 +372,7 @@ function showRecvError(msg) {
 
 // ─── Signaling: Send & Poll ───
 function sendSignal(type, data) {
-  fetch("/api/p2p/signal", {
+  fetch(API_BASE + "/api/p2p/signal", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -407,7 +400,7 @@ function stopPolling() {
 async function pollSignals() {
   try {
     const res = await fetch(
-      "/api/p2p/poll?room=" + roomId + "&role=" + role + "&since=" + pollIndex,
+      API_BASE + "/api/p2p/poll?room=" + roomId + "&role=" + role + "&since=" + pollIndex,
     );
     if (!res.ok) {
       if (res.status === 404) {
@@ -429,38 +422,45 @@ async function pollSignals() {
 }
 
 async function handleSignal(signal) {
-  console.log("Handling signal:", signal.type, "from:", signal.from);
+  if (role === "receiver") {
+    await handleReceiverSignal(signal);
+  } else if (role === "sender") {
+    await handleSenderSignal(signal);
+  }
+}
 
-  try {
-    if (signal.type === "offer" && role === "receiver") {
-      await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
-      // Process any ICE candidates that arrived before the offer
-      for (const c of pendingCandidates) {
-        await pc.addIceCandidate(new RTCIceCandidate(c));
-      }
-      pendingCandidates = [];
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      sendSignal("answer", pc.localDescription);
-    } else if (signal.type === "answer" && role === "sender") {
-      await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
-      // Process any ICE candidates that arrived before the answer
-      for (const c of pendingCandidates) {
-        await pc.addIceCandidate(new RTCIceCandidate(c));
-      }
-      pendingCandidates = [];
-    } else if (signal.type === "ice-candidate") {
-      if (signal.data) {
-        if (pc.remoteDescription) {
-          await pc.addIceCandidate(new RTCIceCandidate(signal.data));
-        } else {
-          // Buffer candidates until remote description is set
-          pendingCandidates.push(signal.data);
-        }
-      }
+async function handleReceiverSignal(signal) {
+  if (signal.type === "offer") {
+    await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
+    for (const c of pendingCandidates) {
+      await pc.addIceCandidate(new RTCIceCandidate(c));
     }
-  } catch (err) {
-    console.error("Signal handling error:", err);
+    pendingCandidates = [];
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    sendSignal("answer", pc.localDescription);
+  } else if (signal.type === "ice-candidate" && signal.data) {
+    if (pc.remoteDescription) {
+      await pc.addIceCandidate(new RTCIceCandidate(signal.data));
+    } else {
+      pendingCandidates.push(signal.data);
+    }
+  }
+}
+
+async function handleSenderSignal(signal) {
+  if (signal.type === "answer") {
+    await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
+    for (const c of pendingCandidates) {
+      await pc.addIceCandidate(new RTCIceCandidate(c));
+    }
+    pendingCandidates = [];
+  } else if (signal.type === "ice-candidate" && signal.data) {
+    if (pc.remoteDescription) {
+      await pc.addIceCandidate(new RTCIceCandidate(signal.data));
+    } else {
+      pendingCandidates.push(signal.data);
+    }
   }
 }
 
@@ -475,29 +475,36 @@ function formatBytes(bytes) {
 
 function copyLink() {
   const url = document.getElementById("shareUrl").textContent;
-  navigator.clipboard
-    .writeText(url)
-    .then(() => showToast("Link copied!"))
-    .catch(() => {
-      // Fallback
-      const input = document.createElement("input");
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-      showToast("Link copied!");
-    });
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url)
+      .then(() => showToast("Link copied!"))
+      .catch(() => fallbackCopy(url));
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text) {
+  const input = document.createElement("input");
+  input.value = text;
+  document.body.appendChild(input);
+  input.select();
+  try {
+    /* eslint-disable-next-line deprecation/deprecation */
+    document.execCommand("copy");
+  } catch (err) {
+    console.error("Fallback copy failed", err);
+  }
+  input.remove();
+  showToast("Link copied!");
 }
 
 function showToast(msg) {
   const t = document.getElementById("toastEl");
   t.textContent = msg;
-  t.classList.remove("opacity-0", "translate-y-4", "pointer-events-none");
-  t.classList.add("opacity-100", "translate-y-0");
+  t.classList.add("toast-show");
   setTimeout(() => {
-    t.classList.add("opacity-0", "translate-y-4", "pointer-events-none");
-    t.classList.remove("opacity-100", "translate-y-0");
+    t.classList.remove("toast-show");
   }, 2000);
 }
 

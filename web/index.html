@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="GoShare — Fast, private file sharing between devices. LAN discovery and P2P transfer with no accounts or cloud storage needed.">
+  <title>GoShare — Fast File Sharing</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="navbar-brand">
+        <span class="logo-dot"></span>
+        GoShare
+      </a>
+      <div class="navbar-links">
+        <a href="lan.html" class="navbar-link">LAN</a>
+        <a href="p2p.html" class="navbar-link">P2P</a>
+        <a href="https://github.com/tanvir-cpp/GoShare" target="_blank" rel="noopener" class="navbar-link-icon"
+          title="GitHub">
+          <svg fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Open source · No sign-up required
+    </div>
+    <h1>
+      Share files between<br>devices, <span class="text-gradient">instantly</span>
+    </h1>
+    <p>
+      Drop files to nearby devices on your LAN or send them anywhere with a link. No accounts, no cloud storage, no
+      limits.
+    </p>
+    <div class="hero-buttons">
+      <a href="lan.html" class="btn btn-primary">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+        </svg>
+        LAN Share
+      </a>
+      <a href="p2p.html" class="btn btn-secondary">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+        </svg>
+        P2P Share
+      </a>
+    </div>
+  </section>
+
+  <!-- Feature Cards -->
+  <section class="features">
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon amber">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+          </svg>
+        </div>
+        <h3>LAN Discovery</h3>
+        <p>Auto-detect devices on your local network. Drag and drop to send files — zero config.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon accent">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+          </svg>
+        </div>
+        <h3>P2P Transfer</h3>
+        <p>Share via link or QR code. Files transfer directly between browsers using WebRTC.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon success">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+        </div>
+        <h3>Private & Encrypted</h3>
+        <p>Files never touch a cloud server. LAN stays local, P2P uses encrypted WebRTC channels.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-section">
+    <div class="how-inner">
+      <h2>How it works</h2>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <h3>Open GoShare</h3>
+          <p>On any device with a browser. No install needed.</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <h3>Pick a file</h3>
+          <p>Drag it onto a device (LAN) or generate a share link (P2P).</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <h3>Done</h3>
+          <p>Files transfer directly. No upload, no waiting, no account.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>GoShare</span>
+      <span>Open source file sharing</span>
+    </div>
+  </footer>
+
+</body>
+
+</html>

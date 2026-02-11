@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -123,9 +124,12 @@ func HandleP2PPoll(w http.ResponseWriter, r *http.Request) {
 
 	since := 0
 	if sinceStr != "" {
-		for _, c := range sinceStr {
-			since = since*10 + int(c-'0')
+		val, err := strconv.Atoi(sinceStr)
+		if err != nil {
+			http.Error(w, "invalid since parameter", 400)
+			return
 		}
+		since = val
 	}
 
 	p2pLock.RLock()

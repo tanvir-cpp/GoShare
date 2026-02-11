@@ -29,7 +29,7 @@ func main() {
 	http.HandleFunc("/api/files", handlers.Cors(handlers.HandleListFiles))
 	http.HandleFunc("/api/delete/", handlers.Cors(handlers.HandleDelete))
 	http.HandleFunc("/api/device/", handlers.Cors(handlers.HandleGetDevice))
-	http.HandleFunc("/download/", handlers.HandleDownload)
+	http.HandleFunc("/download/", handlers.Cors(handlers.HandleDownload))
 
 	// P2P signaling routes
 	http.HandleFunc("/api/p2p/create", handlers.Cors(handlers.HandleP2PCreate))
@@ -53,7 +53,7 @@ func main() {
 
 		// Serve homepage for root path
 		if r.URL.Path == "/" {
-			http.ServeFile(w, r, "web/home.html")
+			http.ServeFile(w, r, "web/index.html")
 			return
 		}
 
@@ -71,7 +71,7 @@ func main() {
 		if err == nil {
 			l.Close()
 			fmt.Printf("\n  ╔═══════════════════════════════════════════════╗\n")
-			fmt.Printf("  ║              GoShare                      ║\n")
+			fmt.Printf("  ║                   GoShare                     ║\n")
 			fmt.Printf("  ╠═══════════════════════════════════════════════╣\n")
 			fmt.Printf("  ║  Local:   http://localhost:%-17d ║\n", currentPort)
 			fmt.Printf("  ║  Network: http://%-14s:%-12d  ║\n", ip, currentPort)
