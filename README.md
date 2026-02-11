@@ -4,6 +4,8 @@ Fast, private file sharing between devices. LAN discovery + P2P transfers via We
 
 No accounts. No cloud. Files go directly between devices.
 
+[Full Documentation](DOCUMENTATION.md)
+
 ## Features
 
 - **LAN Share** — Auto-discover devices on your local network. Drag and drop files to send.
@@ -20,28 +22,22 @@ cd GoShare
 go run main.go
 ```
 
-Opens on `http://localhost:8080`. Any device on the same network can connect via the network URL shown in the terminal.
+opens on `http://localhost:8080`.
 
-### Options
+## Deployment
 
-```
--p    Port number (default: 8080)
--d    Shared files directory (default: shared_files)
-```
+### Deploy to Koyeb
 
-## Docker
+1. **Push** this repository to GitHub.
+2. **Create Service** on [Koyeb](https://app.koyeb.com/).
+3. Select **GitHub** -> `tanvir-cpp/GoShare` -> Branch: `deploy-koyeb`.
+4. **Deploy**. Koyeb will auto-detect the Dockerfile and PORT.
 
-```bash
-docker build -t goshare .
-docker run -p 8080:8080 goshare
-```
+### Deploy to Render
 
-## Deploy to Render
-
-1. Push to GitHub
-2. Create a **Web Service** on [render.com](https://render.com)
-3. Connect your repo, select **Docker** runtime
-4. Deploy — get a public URL like `https://goshare.onrender.com`
+1. Create a **Web Service** on [render.com](https://render.com).
+2. Connect your repo, select **Docker** runtime.
+3. Deploy.
 
 ## Project Structure
 
