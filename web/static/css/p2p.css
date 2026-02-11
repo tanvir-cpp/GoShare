@@ -20,20 +20,76 @@
     }
 }
 
-/* ── QR Code ── */
-#qrcode canvas {
-    border-radius: 8px;
-    max-width: 100%;
+/* ── QR Code & Share Info ── */
+#qrcode {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    display: inline-block;
+}
+
+#qrcode canvas,
+#qrcode img {
+    max-width: 100% !important;
     height: auto !important;
+}
+
+.share-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    margin-top: 2rem;
+}
+
+@media (max-width: 640px) {
+    .share-card {
+        padding: 2rem 1rem;
+    }
+
+    #qrcode {
+        padding: 1rem;
+    }
 }
 
 /* ── File Selection Area ── */
 .file-select-area {
     aspect-ratio: 16 / 10;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 @media (max-width: 480px) {
     .file-select-area {
-        aspect-ratio: 4 / 3;
+        aspect-ratio: 1 / 1;
+        padding: 2rem 1rem !important;
     }
+}
+
+.copy-link-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-family: monospace;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+}
+
+.copy-link-box:hover {
+    border-color: var(--accent);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.copy-link-box span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

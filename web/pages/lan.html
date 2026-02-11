@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="/static/css/shared.css" />
   <link rel="stylesheet" href="/static/css/lan.css" />
+  <style>
+    #sharedFileList:empty+#sharedSendBtn {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
@@ -27,29 +32,17 @@
       <a href="/pages/p2p.html">Global</a>
     </div>
 
-    <button onclick="changeName()"
-      style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 5px 6px 5px 12px; border-radius: var(--radius-full); transition: all 0.3s ease;"
-      class="hover:border-white/20 hover:bg-white/5">
-      <div class="text-right hidden-sm">
-        <div id="navUserName" style="font-size: 0.85rem; font-weight: 600; color: #fff;">...</div>
-        <div
-          style="font-size: 0.7rem; color: var(--success); font-weight: 500; display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem;">
-          Online
-          <i class="fa-solid fa-circle" style="font-size: 8px; opacity: 0.8;"></i>
+        <button onclick="changeName()" class="nav-profile-btn">
+      <div class="nav-user-info hidden-sm">
+        <div id="navUserName" class="nav-user-name">...</div>
+        <div class="nav-user-status">
+          Online <i class="fa-solid fa-circle" style="font-size: 7px;"></i>
         </div>
       </div>
-      <div style="position: relative;">
-        <div id="navUserIcon"
-          style="width: 36px; height: 36px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
-        </div>
-        <div
-          style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: var(--accent); border: 1.5px solid var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M12.22 2h-.44a2 2 0 0 0-2 2a2.01 2.01 0 0 1-2 2a2 2 0 0 0-2 2a2.01 2.01 0 0 1-2 2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2a2.01 2.01 0 0 1 2 2a2 2 0 0 0 2 2a2.01 2.01 0 0 1 2 2a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2a2.01 2.01 0 0 1 2-2a2 2 0 0 0 2-2a2.01 2.01 0 0 1 2-2a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2a2.01 2.01 0 0 1-2-2a2 2 0 0 0-2-2a2.01 2.01 0 0 1-2-2a2 2 0 0 0-2-2z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+      <div class="nav-avatar-wrapper">
+        <div id="navUserIcon" class="nav-avatar"></div>
+        <div class="nav-edit-badge">
+          <i class="fa-solid fa-pen"></i>
         </div>
       </div>
     </button>
@@ -76,7 +69,7 @@
       </div>
       <div id="emptyState" class="text-center"
         style="position: absolute; width: 100%; top: 65%; transform: translateY(-50%);">
-        <div class="text-muted" style="font-size: 0.85rem;">Searching for nearby devices...</div>
+        <div class="text-muted" style="font-size: 0.95rem; font-weight: 500;">Searching for nearby devices...</div>
       </div>
     </div>
 
@@ -184,7 +177,8 @@
         <div class="text-dim" style="font-size: 0.75rem;">or drag and drop here</div>
       </div>
 
-      <div id="sharedFileList" style="margin-bottom: 1.5rem; max-height: 150px; overflow-y: auto;"></div>
+      <div id="sharedFileList" style="margin-top: 1rem; margin-bottom: 1.5rem; max-height: 250px; overflow-y: auto;">
+      </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         <button id="sharedSendBtn" onclick="startLanUpload(true)" class="btn-primary hidden"
@@ -234,22 +228,32 @@
     </div>
   </div>
 
-  <!-- Name Modal -->
+  <!-- Edit Profile Modal -->
   <div class="modal-overlay" id="nameModal">
-    <div class="modal-content">
-      <h2 style="margin-bottom: 0.5rem;">Edit Profile</h2>
-      <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 2rem;">Choose how you appear to others on the
-        network</p>
+    <div class="modal-content" style="max-width: 420px;">
+      <header style="margin-bottom: 2rem; text-align: center;">
+        <h2 style="margin-bottom: 4px;">Edit Profile</h2>
+        <p class="text-muted" style="font-size: 0.85rem;">Personalize your identity on the network</p>
+      </header>
 
-      <input type="text" id="newNameInput" maxlength="20" placeholder="Enter name..."
-        style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 1rem 1.5rem; border-radius: var(--radius-md); color: #fff; margin-bottom: 2rem; outline: none; font-size: 1rem;">
+      <div class="modal-profile-preview">
+        <div id="previewAvatar" class="preview-avatar">🦊</div>
+        <div id="previewName" class="preview-name">Anonymous</div>
+      </div>
 
-      <div style="display: flex; gap: 0.75rem;">
+      <div class="premium-input-group">
+        <label class="input-label" for="newNameInput">Display Name</label>
+        <input type="text" id="newNameInput" maxlength="20" placeholder="Enter your name..." class="premium-input"
+          oninput="updateModalPreview()">
+        <span class="char-counter"><span id="nameCharCount">0</span>/20</span>
+      </div>
+
+      <div style="display: flex; gap: 1rem;">
         <button onclick="closeNameModal()"
-          style="flex: 1; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;"
+          style="flex: 1; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 600;"
           class="hover:text-white">Cancel</button>
         <button onclick="saveNameFromModal()" class="btn-primary"
-          style="flex: 2; justify-content: center; padding: 0.75rem; font-size: 0.9rem;">Save Changes</button>
+          style="flex: 1.5; justify-content: center; padding: 0.85rem; font-size: 0.9rem;">Update Profile</button>
       </div>
     </div>
   </div>

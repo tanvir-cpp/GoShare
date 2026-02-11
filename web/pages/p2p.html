@@ -27,31 +27,17 @@
       <a href="/pages/p2p.html" class="active">Global</a>
     </div>
 
-    <button onclick="changeName()"
-      style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 5px 6px 5px 12px; border-radius: var(--radius-full); transition: all 0.3s ease;"
-      class="hover:border-white/20 hover:bg-white/5">
-      <div class="text-right hidden-sm">
-        <div id="navUserName" style="font-size: 0.85rem; font-weight: 600; color: #fff;">...</div>
-        <div
-          style="font-size: 0.7rem; color: var(--success); font-weight: 500; display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem;">
-          Connected
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="12" r="10" />
-          </svg>
+        <button onclick="changeName()" class="nav-profile-btn">
+      <div class="nav-user-info hidden-sm">
+        <div id="navUserName" class="nav-user-name">...</div>
+        <div class="nav-user-status">
+          Connected <i class="fa-solid fa-circle" style="font-size: 7px;"></i>
         </div>
       </div>
-      <div style="position: relative;">
-        <div id="navUserIcon"
-          style="width: 36px; height: 36px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
-        </div>
-        <div
-          style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: var(--accent); border: 1.5px solid var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M12.22 2h-.44a2 2 0 0 0-2 2a2.01 2.01 0 0 1-2 2a2 2 0 0 0-2 2a2.01 2.01 0 0 1-2 2a2.01 2.01 0 0 1-2 2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2a2.01 2.01 0 0 1 2 2a2 2 0 0 0 2 2a2.01 2.01 0 0 1 2 2a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2a2.01 2.01 0 0 1 2-2a2 2 0 0 0 2-2a2.01 2.01 0 0 1 2-2a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2a2.01 2.01 0 0 1-2-2a2 2 0 0 0-2-2a2.01 2.01 0 0 1-2-2a2 2 0 0 0-2-2z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
+      <div class="nav-avatar-wrapper">
+        <div id="navUserIcon" class="nav-avatar"></div>
+        <div class="nav-edit-badge">
+          <i class="fa-solid fa-pen"></i>
         </div>
       </div>
     </button>
@@ -62,102 +48,96 @@
 
     <!-- SENDER VIEW -->
     <div id="senderView">
-      <header style="margin-bottom: 3rem;">
+      <header style="margin-bottom: 2rem;">
         <div
           style="display: inline-block; padding: 0.4rem 1rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1.5rem;">
           Sharing as <span id="userNameDisplay" style="color: #fff; font-weight: 600;">...</span>
         </div>
-        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Share Everywhere</h1>
-        <p class="text-muted" style="font-weight: 400;">Send files to anyone in the world with a secure link</p>
+        <h1 class="p2p-title">Share Everywhere</h1>
+        <p class="text-muted" style="font-weight: 400; max-width: 400px; margin: 0 auto;">Send files to anyone in the
+          world with a secure link</p>
       </header>
 
-      <div class="drop-zone" id="fileSelectArea" onclick="document.getElementById('fileInput').click()">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-          style="margin-bottom: 1rem;">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-        </svg>
+      <div class="drop-zone file-select-area" id="fileSelectArea"
+        onclick="document.getElementById('fileInput').click()">
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; margin-bottom: 1rem; color: var(--accent);"></i>
         <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">Choose Files</div>
         <p class="text-dim" style="font-size: 0.85rem;">Drag and drop files here to start</p>
-        </header>
-        <input type="file" id="fileInput" multiple style="display: none;" />
+      </div>
+      <input type="file" id="fileInput" multiple style="display: none;" />
 
-        <div id="selectedFile" class="hidden" style="margin-top: 2rem;">
-          <div id="fileList"
-            style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: 1rem; max-height: 200px; overflow-y: auto;">
-          </div>
-          <button id="shareBtn" onclick="createRoom()" class="btn-primary"
-            style="width: 100%; justify-content: center;">Create Secure Link</button>
+      <div id="selectedFile" class="hidden" style="margin-top: 2rem;">
+        <div id="fileList"
+          style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: 1rem; max-height: 200px; overflow-y: auto;">
         </div>
+        <button id="shareBtn" onclick="createRoom()" class="btn-primary"
+          style="width: 100%; justify-content: center;">Create Secure Link</button>
+      </div>
 
-        <!-- Share Info -->
-        <div id="shareInfo" class="hidden" style="margin-top: 2rem;">
-          <div
-            style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow-lg);">
-            <div id="qrcode"
-              style="background: #fff; padding: 1.5rem; border-radius: var(--radius-md); display: inline-block; margin-bottom: 2rem;">
-            </div>
+      <!-- Share Info -->
+      <div id="shareInfo" class="hidden" style="margin-top: 2rem;">
+        <div class="share-card">
+          <div id="qrcode" style="margin-bottom: 2rem;"></div>
 
+          <div class="copy-link-box" onclick="copyUrl()" style="margin-bottom: 2rem;">
+            <i class="fa-solid fa-link" style="color: var(--accent);"></i>
+            <span id="shareUrl" style="flex: 1; text-align: left;">Loading...</span>
+            <i class="fa-solid fa-copy" style="color: var(--text-dim);"></i>
+          </div>
+
+          <div id="waitingStatus"
+            style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
             <div
-              style="display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 4px 4px 4px 1.25rem; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-              <span id="shareUrl" class="text-muted"
-                style="font-family: monospace; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">Loading...</span>
-              <button onclick="copyLink()" class="btn-primary"
-                style="padding: 0.5rem 1.25rem; font-size: 0.8rem;">Copy</button>
+              style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite;">
             </div>
-
-            <div id="waitingStatus"
-              style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
-              <div
-                style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite;">
-              </div>
-              Waiting for recipient...
-            </div>
+            Waiting for recipient...
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- RECEIVER VIEW -->
-      <div id="receiverView" class="hidden">
-        <header style="margin-bottom: 3rem;">
-          <div
-            style="display: inline-block; padding: 0.4rem 1rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1.5rem;">
-            From: <span id="remoteUserName" style="color: #fff; font-weight: 600;">Someone</span>
-          </div>
-          <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Secure Transfer</h1>
-          <p class="text-muted" style="font-weight: 400;">Encrypted direct connection established</p>
-        </header>
-
-        <div id="recvDefault"
-          style="background: var(--surface); border: 1px solid var(--border); padding: 2.5rem; border-radius: var(--radius-lg); text-align: center;">
-          <div style="color: var(--accent); margin-bottom: 1.25rem;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </div>
-          <p id="receiverFilesText" style="font-weight: 600; margin-bottom: 0.75rem; font-size: 1.1rem;">Files ready to
-            download</p>
-          <div id="receiverStatus"
-            style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--success);">
-            <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
-            Stable Connection
-          </div>
+    <!-- RECEIVER VIEW -->
+    <div id="receiverView" class="hidden">
+      <header style="margin-bottom: 3rem;">
+        <div
+          style="display: inline-block; padding: 0.4rem 1rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1.5rem;">
+          From: <span id="remoteUserName" style="color: #fff; font-weight: 600;">Someone</span>
         </div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Secure Transfer</h1>
+        <p class="text-muted" style="font-weight: 400;">Encrypted direct connection established</p>
+      </header>
 
-        <div id="recvConnecting" class="hidden" style="padding: 4rem 2rem;">
-          <div style="font-size: 2rem; animation: pulse 1s infinite;">⚡</div>
-          <p class="text-muted" style="margin-top: 1rem;">Connecting to sender...</p>
+      <div id="recvDefault"
+        style="background: var(--surface); border: 1px solid var(--border); padding: 2.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="color: var(--accent); margin-bottom: 1.25rem;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
         </div>
-
-        <div id="recvError" class="hidden"
-          style="background: rgba(239, 68, 68, 0.05); border: 1px solid var(--danger); padding: 3rem; border-radius: var(--radius-lg);">
-          <h3 style="color: var(--danger); margin-bottom: 1rem;">Connection Failed</h3>
-          <p id="recvErrorMsg" class="text-muted" style="font-size: 0.9rem;">The link might be invalid or expired.</p>
-          <a href="/pages/p2p.html" class="btn-primary"
-            style="margin-top: 2rem; background: var(--danger); color: #fff;">Try Again</a>
+        <p id="receiverFilesText" style="font-weight: 600; margin-bottom: 0.75rem; font-size: 1.1rem;">Files ready to
+          download</p>
+        <div id="receiverStatus"
+          style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--success);">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+          Stable Connection
         </div>
       </div>
+
+      <div id="recvConnecting" class="hidden" style="padding: 4rem 2rem;">
+        <div style="font-size: 2rem; animation: pulse 1s infinite;">⚡</div>
+        <p class="text-muted" style="margin-top: 1rem;">Connecting to sender...</p>
+      </div>
+
+      <div id="recvError" class="hidden"
+        style="background: rgba(239, 68, 68, 0.05); border: 1px solid var(--danger); padding: 3rem; border-radius: var(--radius-lg);">
+        <h3 style="color: var(--danger); margin-bottom: 1rem;">Connection Failed</h3>
+        <p id="recvErrorMsg" class="text-muted" style="font-size: 0.9rem;">The link might be invalid or expired.</p>
+        <a href="/pages/p2p.html" class="btn-primary"
+          style="margin-top: 2rem; background: var(--danger); color: #fff;">Try Again</a>
+      </div>
+    </div>
   </main>
 
   <!-- Transfer Overlay (Common) -->
@@ -211,21 +191,32 @@
     </div>
   </div>
 
-  <!-- Identity Modal -->
+  <!-- Edit Profile Modal -->
   <div class="modal-overlay" id="nameModal">
-    <div class="modal-content">
-      <h2 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Set Display Name</h2>
-      <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 1.5rem;">Choose how you appear to others</p>
+    <div class="modal-content" style="max-width: 420px;">
+      <header style="margin-bottom: 2rem; text-align: center;">
+        <h2 style="margin-bottom: 4px;">Edit Profile</h2>
+        <p class="text-muted" style="font-size: 0.85rem;">Choose how you appear globally</p>
+      </header>
 
-      <input type="text" id="newNameInput" maxlength="20" placeholder="Enter name..."
-        style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 1rem 1.5rem; border-radius: var(--radius-md); color: #fff; margin-bottom: 2rem; outline: none; font-size: 1rem;">
+      <div class="modal-profile-preview">
+        <div id="previewAvatar" class="preview-avatar">🦊</div>
+        <div id="previewName" class="preview-name">Anonymous</div>
+      </div>
 
-      <div style="display: flex; gap: 0.75rem;">
+      <div class="premium-input-group">
+        <label class="input-label" for="newNameInput">Display Name</label>
+        <input type="text" id="newNameInput" maxlength="20" placeholder="Enter your name..." class="premium-input"
+          oninput="updateModalPreview()">
+        <span class="char-counter"><span id="nameCharCount">0</span>/20</span>
+      </div>
+
+      <div style="display: flex; gap: 1rem;">
         <button onclick="closeNameModal()"
-          style="flex: 1; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;"
+          style="flex: 1; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 600;"
           class="hover:text-white">Cancel</button>
         <button onclick="saveNameFromModal()" class="btn-primary"
-          style="flex: 2; justify-content: center; padding: 0.75rem; font-size: 0.9rem;">Save Changes</button>
+          style="flex: 1.5; justify-content: center; padding: 0.85rem; font-size: 0.9rem;">Update Profile</button>
       </div>
     </div>
   </div>

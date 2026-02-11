@@ -10,22 +10,56 @@ const myId =
     })();
 
 const deviceIcons = {
-    fox: '<i class="fa-solid fa-gear"></i>',
-    panda: '<i class="fa-solid fa-file"></i>',
-    owl: '<i class="fa-solid fa-eye"></i>',
-    wolf: '<i class="fa-solid fa-desktop"></i>',
-    bear: '<i class="fa-solid fa-shield"></i>',
-    hawk: '<i class="fa-solid fa-paper-plane"></i>',
-    cat: '<i class="fa-solid fa-wand-magic-sparkles"></i>',
-    dolphin: '<i class="fa-solid fa-sun"></i>',
-    tiger: '<i class="fa-solid fa-bolt"></i>',
-    lion: '<i class="fa-solid fa-star"></i>',
-    koala: '<i class="fa-solid fa-masks-theater"></i>',
-    raven: '<i class="fa-solid fa-book-open"></i>',
-    otter: '<i class="fa-solid fa-face-smile"></i>',
-    shark: '<i class="fa-solid fa-globe"></i>',
-    elephant: '<i class="fa-solid fa-database"></i>',
-    butterfly: '<i class="fa-solid fa-wand-magic-sparkles"></i>',
+    fox: "🦊",
+    panda: "🐼",
+    owl: "🦉",
+    wolf: "🐺",
+    bear: "🐻",
+    hawk: "🦅",
+    cat: "🐱",
+    dolphin: "🐬",
+    tiger: "🐯",
+    lion: "🦁",
+    koala: "🐨",
+    raven: "🐦",
+    otter: "🦦",
+    shark: "🦈",
+    elephant: "🐘",
+    butterfly: "🦋",
+    dragon: "🐲",
+    crab: "🦀",
+    squid: "🦑",
+    unicorn: "🦄",
+    rabbit: "🐰",
+    monkey: "🐵",
+    duck: "🦆",
+    frog: "🐸",
+    snake: "🐍",
+    whale: "🐋",
+    octopus: "🐙",
+    bee: "🐝",
+    bug: "🐞",
+    turtle: "🐢",
+    dino: "🦖",
+    alien: "👽",
+    robot: "🤖",
+    ghost: "👻",
+    rocket: "🚀",
+    fire: "🔥",
+    star: "⭐",
+    planet: "🪐",
+    lightning: "⚡",
+    snowflake: "❄️",
+    phoenix: "🐦‍🔥",
+    mammoth: "🦣",
+    sloth: "🦥",
+    penguin: "🐧",
+    parrot: "🦜",
+    fish: "🐠",
+    lobster: "🦞",
+    scorpio: "🦂",
+    spider: "🕷️",
+    clover: "🍀"
 };
 
 function getDeviceSvg(iconNameOrName) {
@@ -69,6 +103,7 @@ function closeModal() {
 
 function updateIdentity() {
     const name = localStorage.getItem("user_name") || "Anonymous";
+
     const el = document.getElementById("userNameDisplay");
     if (el) el.textContent = name;
 
@@ -76,7 +111,10 @@ function updateIdentity() {
     const navNameEl = document.getElementById("navUserName");
     const navIconEl = document.getElementById("navUserIcon");
     if (navNameEl) navNameEl.textContent = name;
-    if (navIconEl) navIconEl.innerHTML = getDeviceSvg(name);
+    if (navIconEl) {
+        navIconEl.innerHTML = getDeviceSvg(name);
+        navIconEl.style.fontSize = "1.25rem";
+    }
 
     // Specific for LAN page if exists
     const meNameEl = document.getElementById("meName");
@@ -92,8 +130,22 @@ function changeName() {
     if (!modal || !input) return;
 
     input.value = currentName === "Anonymous" ? "" : currentName;
+    updateModalPreview(); // Set initial preview
     modal.classList.add("open");
     input.focus();
+}
+
+function updateModalPreview() {
+    const input = document.getElementById("newNameInput");
+    const name = input.value.trim() || "Anonymous";
+
+    const previewName = document.getElementById("previewName");
+    const previewAvatar = document.getElementById("previewAvatar");
+    const charCount = document.getElementById("nameCharCount");
+
+    if (previewName) previewName.textContent = name;
+    if (previewAvatar) previewAvatar.innerHTML = getDeviceSvg(name);
+    if (charCount) charCount.textContent = input.value.length;
 }
 
 function closeNameModal() {

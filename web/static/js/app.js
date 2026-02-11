@@ -1,6 +1,6 @@
 let peers = {},
   targetPeer = null,
-  queuedFiles = [],
+  uploadQueue = [],
   incomingFiles = [],
   notifFile = null,
   evtSource = null,
@@ -141,7 +141,7 @@ function renderPeers() {
     el.style.transform = "translate(-50%,-50%)";
 
     el.innerHTML = `
-      <div style="width: 32px; height: 32px; color: var(--accent);">${getDeviceSvg(p.icon)}</div>
+      <div style="font-size: 2.25rem; line-height: 1; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));">${getDeviceSvg(p.icon)}</div>
       <div class="peer-name">${p.name}</div>
     `;
 
@@ -159,15 +159,16 @@ function renderPeers() {
 function closeModal() {
   document.getElementById("modalOverlay").classList.remove("open");
   targetPeer = null;
-  queuedFiles = [];
+  uploadQueue = [];
   renderQueue("transfer");
 }
 function openSharedUpload() {
+  uploadQueue = []; // Reset queue when opening
   document.getElementById("sharedOverlay").classList.add("open");
 }
 function closeSharedOverlay() {
   document.getElementById("sharedOverlay").classList.remove("open");
-  queuedFiles = [];
+  uploadQueue = [];
   renderQueue("shared");
 }
 
@@ -309,7 +310,7 @@ async function loadSharedFiles() {
     bar.innerHTML = '<!-- File chips will be dynamically added here -->';
 
     if (!files || !Array.isArray(files) || files.length === 0) {
-      bar.classList.add("hidden");
+      bar.innerHTML = '<div style="padding: 0.5rem 1rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 500; opacity: 0.6;">No shared files visible right now</div>';
       return;
     }
 
@@ -320,10 +321,8 @@ async function loadSharedFiles() {
       chip.style.cssText = "flex-shrink: 0; display: flex; align-items: center; gap: 0.75rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 0.5rem 1rem; cursor: pointer; transition: all 0.2s;";
       chip.title = "Download " + f.name;
       chip.innerHTML = `
-        <span style="color: var(--accent); display: flex;">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
-          </svg>
+        <span style="color: var(--accent); display: flex; font-size: 14px;">
+          <i class="fa-solid fa-file"></i>
         </span>
         <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; font-weight: 500;">
           ${f.name}
@@ -415,7 +414,15 @@ function setupDragDrop() {
 }
 
 function queueFiles(files, prefix) {
-  queuedFiles = Array.from(files);
+  const newFiles = Array.from(files);
+  // Filter out duplicates (by name and size)
+  const uniqueNewFiles = newFiles.filter(nf => !uploadQueue.some(qf => qf.name === nf.name && qf.size === nf.size));
+  uploadQueue = [...uploadQueue, ...uniqueNewFiles];
+  renderQueue(prefix);
+}
+
+function removeFromQueue(index, prefix) {
+  uploadQueue.splice(index, 1);
   renderQueue(prefix);
 }
 
@@ -428,29 +435,47 @@ function renderQueue(prefix) {
   if (!list || !sendBtn || !dropArea) return;
 
   list.innerHTML = "";
-  if (queuedFiles.length > 0) {
-    queuedFiles.forEach((f, i) => {
+  if (uploadQueue.length > 0) {
+    uploadQueue.forEach((f, i) => {
       const item = document.createElement("div");
-      item.style.cssText = "background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;";
-      item.innerHTML = `<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">${f.name}</span> <span style="color: var(--text-dim); font-size: 0.7rem;">${formatBytes(f.size)}</span>`;
+      item.style.cssText = "background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;";
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem; max-width: 80%;">
+          <i class="fa-solid fa-file" style="color: var(--accent); opacity: 0.7;"></i>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.name}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="color: var(--text-dim); font-size: 0.7rem;">${formatBytes(f.size)}</span>
+          <i class="fa-solid fa-xmark" style="cursor: pointer; padding: 4px; color: var(--text-dim);" onclick="removeFromQueue(${i}, '${prefix}')"></i>
+        </div>
+      `;
       list.appendChild(item);
     });
     list.classList.remove("hidden");
     sendBtn.classList.remove("hidden");
-    dropArea.classList.add("hidden");
+    // Make dropArea smaller but keep it visible
+    dropArea.style.padding = "1rem";
+    dropArea.querySelector("i").style.fontSize = "20px";
+    dropArea.querySelector("i").style.marginBottom = "0.5rem";
+    dropArea.querySelectorAll("div").forEach(d => d.style.fontSize = "0.7rem");
   } else {
     list.classList.add("hidden");
     sendBtn.classList.add("hidden");
-    dropArea.classList.remove("hidden");
+    // Reset dropArea
+    dropArea.style.padding = "2.5rem 1.5rem";
+    dropArea.querySelector("i").style.fontSize = "32px";
+    dropArea.querySelector("i").style.marginBottom = "1rem";
+    dropArea.querySelectorAll("div")[0].style.fontSize = "0.9rem";
+    dropArea.querySelectorAll("div")[1].style.fontSize = "0.75rem";
   }
 }
 
 function startLanUpload(isShared) {
-  if (queuedFiles.length === 0) return;
+  if (uploadQueue.length === 0) return;
   const prefix = isShared ? "shared" : "transfer";
   const to = isShared ? null : targetPeer;
-  upload(queuedFiles, to, prefix);
-  queuedFiles = [];
+  upload(uploadQueue, to, prefix);
+  uploadQueue = [];
   renderQueue(prefix);
 }
 
