@@ -217,10 +217,10 @@
     >
       <header class="mb-8">
         <h1 class="text-4xl font-semibold tracking-tighter mb-2 text-white">
-          Nearby
+          Local Sharing
         </h1>
         <p class="text-zinc-500 text-sm sm:text-xs font-medium mb-6">
-          Scanning for active devices on your connection
+          Looking for others on your Wi-Fi network...
         </p>
         <button
           onclick="openConnectModal()"
@@ -239,7 +239,7 @@
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Direct Connect
+          Connect via ID
         </button>
       </header>
 
@@ -281,10 +281,10 @@
           id="deviceCount"
           class="inline-block px-5 py-2 bg-white/[0.03] border border-white/[0.05] text-zinc-500 rounded-full text-sm sm:text-[10px] font-semibold uppercase tracking-widest mb-4"
         >
-          0 Active
+          0 Nearby
         </div>
-        <p class="text-sm text-zinc-500 font-medium">
-          Share your URL to begin local transfers
+        <p class="text-xs text-zinc-500 font-medium uppercase tracking-widest">
+          Share your URL so your friends can see you
         </p>
       </div>
     </div>
@@ -298,7 +298,7 @@
         onclick="openSharedUpload()"
         class="flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-white text-black text-sm sm:text-[10px] font-semibold uppercase tracking-widest rounded-full transition-opacity hover:opacity-90"
       >
-        <span>Broadcast File</span>
+        <span>Share with Everyone</span>
       </button>
 
       <div class="flex items-center gap-4">

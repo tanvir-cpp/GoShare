@@ -340,32 +340,38 @@ function abortTransfer() {
 }
 
 async function loadSharedFiles() {
-  const r = await fetch("/api/files");
-  const files = await r.json();
-  const bar = document.getElementById("sharedBar");
-  bar.querySelectorAll(".file-chip").forEach((el) => el.remove());
-  files.forEach((f) => {
-    const chip = document.createElement("div");
-    chip.className =
-      "file-chip flex-shrink-0 flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2 transition-all hover:border-accent hover:bg-card-hover max-w-[180px] cursor-pointer";
-    chip.title = "Click to download " + f.name;
-    chip.innerHTML =
-      '<span class="text-accent w-4 h-4 flex-shrink-0"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></span>' +
-      '<div class="flex-1 min-w-0 text-left">' +
-      '<span class="block text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">' +
-      f.name +
-      "</span>" +
-      '<span class="text-[0.65rem] text-muted">' +
-      formatBytes(f.size) +
-      "</span>" +
-      "</div>" +
-      '<span class="text-muted text-lg leading-none cursor-pointer hover:text-danger" title="Delete file" onclick="event.stopPropagation();delFile(\'' +
-      f.name +
-      "')\">×</span>";
-    chip.onclick = () =>
-      (location.href = "/download/" + f.name + "?id=" + myId);
-    bar.appendChild(chip);
-  });
+  try {
+    const r = await fetch("/api/files");
+    const files = await r.json();
+    const bar = document.getElementById("sharedBar");
+    if (!bar) return;
+    bar.querySelectorAll(".file-chip").forEach((el) => el.remove());
+    if (!files || !Array.isArray(files)) return;
+    files.forEach((f) => {
+      const chip = document.createElement("div");
+      chip.className =
+        "file-chip flex-shrink-0 flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2 transition-all hover:border-accent hover:bg-card-hover max-w-[180px] cursor-pointer";
+      chip.title = "Click to download " + f.name;
+      chip.innerHTML =
+        '<span class="text-accent w-4 h-4 flex-shrink-0"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></span>' +
+        '<div class="flex-1 min-w-0 text-left">' +
+        '<span class="block text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">' +
+        f.name +
+        "</span>" +
+        '<span class="text-[0.65rem] text-muted">' +
+        formatBytes(f.size) +
+        "</span>" +
+        "</div>" +
+        '<span class="text-muted text-lg leading-none cursor-pointer hover:text-danger" title="Delete file" onclick="event.stopPropagation();delFile(\'' +
+        f.name +
+        "')\">×</span>";
+      chip.onclick = () =>
+        (location.href = "/download/" + f.name + "?id=" + myId);
+      bar.appendChild(chip);
+    });
+  } catch (e) {
+    console.error("Failed to load shared files:", e);
+  }
 }
 
 async function delFile(n) {
