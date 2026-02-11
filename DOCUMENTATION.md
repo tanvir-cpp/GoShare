@@ -1,103 +1,61 @@
-# GoShare Documentation
+# 📖 GoShare Technical Documentation
 
-GoShare is a lightweight, high-performance file sharing application written in Go and Vanilla JavaScript. It supports two modes of transfer:
-1. **LAN Mode**: Auto-discovery and drag-and-drop sharing on local networks.
-2. **P2P Mode**: Secure, direct browser-to-browser transfer over the internet using WebRTC.
+This document provides a deep dive into the architecture, signaling logic, and implementation details of GoShare.
 
-## 1. Architecture Overview
+## 🏗️ Architecture
+
+GoShare follows a "Fat Client, Thin Server" philosophy. The server manages discovery and signaling, while the clients (browsers) handle the heavy lifting of UI state and actual file data transfer (P2P).
 
 ### Backend (Go)
-The backend uses only the Go standard library (plus `package net` dependencies). It serves three main purposes:
-- **Static File Server**: Serves the frontend (`web/` directory).
-- **LAN Discovery & Signaling**: Manages device registration and broadcasts events (peers joining, files sent) using Server-Sent Events (SSE).
-- **P2P Signaling**: Acts as a lightweight message broker for WebRTC handshake (Offer/Answer/ICE).
+The backend is built using pure Go standard library components to ensure maximum portability and minimal footprint.
+- **Port Handling**: Prioritizes the `PORT` environment variable for cloud compatibility.
+- **In-Memory Registry**: Uses a thread-safe map (`sync.RWMutex`) to track active devices.
+- **Event Streaming**: Implements Server-Sent Events (SSE) for real-time updates without the overhead of WebSockets.
 
-**Key Directories:**
-- `main.go`: Entry point. Sets up HTTP server, routes, and `PORT` configuration.
-- `pkg/discovery`: Handles in-memory device registry and SSE broadcasting.
-- `pkg/handlers`: Contains all API logic (LAN upload, deletion, P2P creation).
-- `pkg/network`: Utility to detect the local machine's LAN IP.
-
-### Frontend (HTML/JS/CSS)
-- **Vanilla JS**: No frameworks. Uses ES6+ features (`fetch`, `EventSource`, `RTCPeerConnection`).
-- **CSS**: Custom monochromatic "Clean UI" design system (variables, flex/grid, responsiveness).
-- **Pages**:
-  - `index.html`: Landing page.
-  - `lan.html`: Local network dashboard.
-  - `p2p.html`: WebRTC transfer interface.
+### Frontend (Vanilla Stack)
+- **Logic**: ES6+ JavaScript.
+- **Styles**: Custom Vanilla CSS design system.
+- **Real-time**: EventSource API for receiving peer updates.
 
 ---
 
-## 2. LAN Sharing Logic
+## 📡 Signaling & Discovery
 
-**How it works:**
-1. **Registration**: When `lan.html` loads, `app.js` calls `/api/register`. The backend generates a random device name (Adjective + Animal) and stores it in memory.
-2. **Discovery (SSE)**: The client connects to `/api/events`. The backend keeps this connection open.
-   - When a new device registers, the backend broadcasts a `device-joined` event to all open SSE connections.
-   - When a device disconnects (heartbeat timeout), a `device-left` event is sent.
-3. **Transfer**:
-   - **Upload**: Files are POSTed to `/api/upload`. They are stored in `shared_files/public/` (or `private/{id}/`).
-   - **Notification**: After upload, the backend sends a `file-sent` SSE event to the target device.
-   - **Download**: The recipient clicks the notification to download from `/download/{filename}`.
+### LAN Mode (SSE)
+When a device joins the LAN network, it registers via `/api/register`. It then opens an SSE connection at `/api/events`.
+- **Peer Join**: When User A joins, the server sends an `event: device-joined` to User B and C.
+- **Peer Leave**: Managed via both explicit disconnect and a background `CleanupStale` goroutine that monitors heartbeats.
 
----
-
-## 3. P2P Sharing Logic (WebRTC)
-
-**How it works:**
-1. **Room Creation**: Sender clicks "Share". Frontend calls `/api/p2p/create` to get a unique `roomID`.
-2. **Signaling**:
-   - Both Sender and Receiver poll `/api/p2p/poll` every second.
-   - **Sender** creates a WebRTC Offer and posts it to `/api/p2p/signal`.
-   - **Receiver** picks up the Offer via polling, sets it as Remote Description, creates an Answer, and posts it back.
-   - **Sender** picks up the Answer.
-   - **ICE Candidates** (network paths) are exchanged similarly via the signaling endpoint.
-3. **Data Channel**: Once connected, a direct `RTCDataChannel` is opened.
-   - Files are chunked (64KB) and sent directly peer-to-peer.
-   - **No data passes through the server** during the transfer (only metadata).
+### P2P Mode (Signaling Broker)
+Since WebRTC requires an initial metadata exchange (Offer/Answer), GoShare provides a signaling broker:
+1. **Create Room**: `POST /api/p2p/create` returns a unique room ID.
+2. **Post Signal**: `POST /api/p2p/signal` allows a peer to push an SDP or ICE candidate.
+3. **Poll Signals**: `GET /api/p2p/poll?room={id}&role={role}&since={index}` allows the other peer to retrieve pending signals.
 
 ---
 
-## 4. Deployment to Koyeb
+## 🔌 API Reference
 
-This repository is configured for zero-config deployment on Koyeb.
+### Device Management
+- `POST /api/register`: Register a new device with a unique ID.
+- `GET /api/events?id={id}`: SSE endpoint for peer updates.
+- `GET /api/device/{id}`: Metadata for a specific device.
 
-**Prerequisites:**
-- A [Koyeb account](https://app.koyeb.com/).
-- This repository pushed to GitHub.
+### File Transfer (LAN)
+- `POST /api/upload`: Multi-part form upload. Supports `public` and `private` (to specific device) transfers.
+- `GET /api/files`: List all publicly shared files.
+- `GET /download/{filename}?id={my_id}`: Download a file. Private files are auto-deleted after one successful download.
+- `DELETE /api/delete/{filename}`: Remove a file from the public directory.
 
-**Steps:**
-1. **Push Branch**: Ensure the `deploy-koyeb` branch is pushed to GitHub.
-   ```bash
-   git push origin deploy-koyeb
-   ```
-2. **Create Service**:
-   - Go to **Koyeb Dashboard** > **Create Web Service**.
-   - Select **GitHub** as the source.
-   - Repository: `tanvir-cpp/GoShare`.
-   - Branch: `deploy-koyeb`.
-   - Builder: **Docker**.
-3. **Deploy**:
-   - Koyeb will automatically detect the `Dockerfile`.
-   - It will inject the `PORT` environment variable.
-   - The app will build and go live at `https://<your-app>.koyeb.app`.
+### signaling (P2P)
+- `POST /api/p2p/create`: Initialize a P2P room.
+- `POST /api/p2p/signal`: Send WebRTC signaling data.
+- `GET /api/p2p/poll`: Long-polling or frequent polling for signals.
 
 ---
 
-## 5. Local Development
+## 🔒 Security Considerations
 
-**Run with Go:**
-```bash
-go run main.go
-# Opens on http://localhost:8080
-```
-
-**Run with Docker:**
-```bash
-docker build -t goshare .
-docker run -p 8080:8080 goshare
-```
-
-**Configuration:**
-- `PORT` env var: Overrides default port 8080.
-- `-d` flag: Sets shared files directory (default: `shared_files`).
+- **Direct Transfer**: In P2P mode, file data is encrypted by WebRTC (DTLS/SRTP) and never touches the server.
+- **Ephemeral Storage**: In LAN mode, private files are deleted immediately after download.
+- **Zero Accounts**: No user data is stored; identities are temporary and based on browser IDs.
