@@ -4,9 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"mime"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -30,19 +33,36 @@ func main() {
 	handlers.SharedDir = *sharedDir
 	os.MkdirAll(*sharedDir, 0755)
 
+	// Recover from panics to keep server alive
+	recoverMiddleware := func(h http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if err := recover(); err != nil {
+					log.Printf("PANIC recovered: %v\n%s", err, debug.Stack())
+					http.Error(w, "Internal Server Error", 500)
+				}
+			}()
+			h(w, r)
+		}
+	}
+
+	appHandler := func(h http.HandlerFunc) http.HandlerFunc {
+		return recoverMiddleware(handlers.Cors(h))
+	}
+
 	// API Routes (must be registered before catch-all)
-	http.HandleFunc("/api/register", handlers.Cors(handlers.HandleRegister))
-	http.HandleFunc("/api/events", handlers.Cors(handlers.HandleEvents))
-	http.HandleFunc("/api/upload", handlers.Cors(handlers.HandleUpload))
-	http.HandleFunc("/api/files", handlers.Cors(handlers.HandleListFiles))
-	http.HandleFunc("/api/delete/", handlers.Cors(handlers.HandleDelete))
-	http.HandleFunc("/api/device/", handlers.Cors(handlers.HandleGetDevice))
+	http.HandleFunc("/api/register", appHandler(handlers.HandleRegister))
+	http.HandleFunc("/api/events", appHandler(handlers.HandleEvents))
+	http.HandleFunc("/api/upload", appHandler(handlers.HandleUpload))
+	http.HandleFunc("/api/files", appHandler(handlers.HandleListFiles))
+	http.HandleFunc("/api/delete/", appHandler(handlers.HandleDelete))
+	http.HandleFunc("/api/device/", appHandler(handlers.HandleGetDevice))
 	http.HandleFunc("/download/", handlers.HandleDownload)
 
 	// P2P signaling routes
-	http.HandleFunc("/api/p2p/create", handlers.Cors(handlers.HandleP2PCreate))
-	http.HandleFunc("/api/p2p/signal", handlers.Cors(handlers.HandleP2PSignal))
-	http.HandleFunc("/api/p2p/poll", handlers.Cors(handlers.HandleP2PPoll))
+	http.HandleFunc("/api/p2p/create", appHandler(handlers.HandleP2PCreate))
+	http.HandleFunc("/api/p2p/signal", appHandler(handlers.HandleP2PSignal))
+	http.HandleFunc("/api/p2p/poll", appHandler(handlers.HandleP2PPoll))
 
 	// Static file server for web assets
 	fs := http.FileServer(http.Dir("web"))
@@ -52,11 +72,10 @@ func main() {
 			log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 		}
 
-		// Fix for Windows CSS/JS MIME issues
-		if strings.HasSuffix(r.URL.Path, ".css") {
-			w.Header().Set("Content-Type", "text/css")
-		} else if strings.HasSuffix(r.URL.Path, ".js") {
-			w.Header().Set("Content-Type", "application/javascript")
+		// Use standard mime package for reliable types
+		contentType := mime.TypeByExtension(filepath.Ext(r.URL.Path))
+		if contentType != "" {
+			w.Header().Set("Content-Type", contentType)
 		}
 
 		// Serve homepage for root path

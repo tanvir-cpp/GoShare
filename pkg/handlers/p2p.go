@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -123,8 +124,8 @@ func HandleP2PPoll(w http.ResponseWriter, r *http.Request) {
 
 	since := 0
 	if sinceStr != "" {
-		for _, c := range sinceStr {
-			since = since*10 + int(c-'0')
+		if s, err := strconv.Atoi(sinceStr); err == nil {
+			since = s
 		}
 	}
 

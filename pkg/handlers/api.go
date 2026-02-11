@@ -154,9 +154,13 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
+	// Limit total upload size to 2 GB
+	r.Body = http.MaxBytesReader(w, r.Body, 2<<30)
+
 	err := r.ParseMultipartForm(100 << 20)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		log.Printf("Upload parse error: %v", err)
+		http.Error(w, "File too large or invalid upload (Max 2GB)", 413)
 		return
 	}
 
@@ -174,13 +178,30 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
-		f, _ := fh.Open()
-		safeName := filepath.Base(fh.Filename)
-		dst, _ := os.Create(filepath.Join(uploadDir, safeName))
-		io.Copy(dst, f)
-		f.Close()
-		dst.Close()
-		saved = append(saved, safeName)
+		func() {
+			f, err := fh.Open()
+			if err != nil {
+				log.Printf("Error opening uploaded file: %v", err)
+				return
+			}
+			defer f.Close()
+
+			safeName := filepath.Base(fh.Filename)
+			outPath := filepath.Join(uploadDir, safeName)
+
+			dst, err := os.Create(outPath)
+			if err != nil {
+				log.Printf("Error creating file %s: %v", outPath, err)
+				return
+			}
+			defer dst.Close()
+
+			if _, err := io.Copy(dst, f); err != nil {
+				log.Printf("Error saving file %s: %v", outPath, err)
+				return
+			}
+			saved = append(saved, safeName)
+		}()
 	}
 
 	if toID != "" && fromID != "" && len(saved) > 0 {
@@ -205,12 +226,24 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 func HandleListFiles(w http.ResponseWriter, r *http.Request) {
 	publicDir := filepath.Join(SharedDir, "public")
-	os.MkdirAll(publicDir, 0755)
-	entries, _ := os.ReadDir(publicDir)
+	if err := os.MkdirAll(publicDir, 0755); err != nil {
+		log.Printf("Error creating public dir: %v", err)
+		http.Error(w, "internal error", 500)
+		return
+	}
+	entries, err := os.ReadDir(publicDir)
+	if err != nil {
+		log.Printf("Error reading public dir: %v", err)
+		http.Error(w, "internal error", 500)
+		return
+	}
 	var list []map[string]interface{}
 	for _, e := range entries {
 		if !e.IsDir() {
-			info, _ := e.Info()
+			info, err := e.Info()
+			if err != nil {
+				continue
+			}
 			list = append(list, map[string]interface{}{
 				"name": e.Name(),
 				"size": info.Size(),
@@ -218,13 +251,24 @@ func HandleListFiles(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(list)
+	if err := json.NewEncoder(w).Encode(list); err != nil {
+		log.Printf("Error encoding file list: %v", err)
+	}
 }
 
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Base(r.URL.Path)
+	if name == "." || name == "/" || name == "" {
+		http.Error(w, "invalid filename", 400)
+		return
+	}
 	// Only allow deleting from public for now to prevent unauthorized deletion of private files
-	os.Remove(filepath.Join(SharedDir, "public", name))
+	target := filepath.Join(SharedDir, "public", name)
+	if err := os.Remove(target); err != nil {
+		log.Printf("Error deleting file %s: %v", target, err)
+		http.Error(w, "could not delete file", 500)
+		return
+	}
 	discovery.Broadcast("shared-update", nil, "")
 	w.WriteHeader(200)
 }
@@ -258,7 +302,14 @@ func HandleDownload(w http.ResponseWriter, r *http.Request) {
 func HandleGetDevice(w http.ResponseWriter, r *http.Request) {
 	id := filepath.Base(r.URL.Path)
 	discovery.Lock.RLock()
-	defer discovery.Lock.RUnlock()
+	dev, ok := discovery.Devices[id]
+	discovery.Lock.RUnlock()
+
+	if !ok {
+		http.Error(w, "device not found", 404)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(discovery.Devices[id])
+	json.NewEncoder(w).Encode(dev)
 }

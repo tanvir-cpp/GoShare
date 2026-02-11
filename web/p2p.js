@@ -84,6 +84,9 @@ function setupFileInput() {
 }
 
 function showSelectedFile() {
+  if (selectedFile.size > 2 * 1024 * 1024 * 1024) {
+    showToast("Warning: Files over 2GB may fail on some devices");
+  }
   document.getElementById("fileName").textContent = selectedFile.name;
   document.getElementById("fileSize").textContent = formatBytes(
     selectedFile.size,
@@ -108,6 +111,7 @@ async function createRoom() {
 
   try {
     const res = await fetch("/api/p2p/create", { method: "POST" });
+    if (!res.ok) throw new Error("Server error: " + res.status);
     const data = await res.json();
     roomId = data.room;
 
