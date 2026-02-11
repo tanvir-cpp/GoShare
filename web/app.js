@@ -527,14 +527,33 @@ function preventDefaults(e) {
   e.stopPropagation();
 }
 
-function openConnectModal() {
+async function openConnectModal() {
   const modal = document.getElementById("connectModal");
-  const modalContent = document.getElementById("connectModalCard");
   const urlText = document.getElementById("lanUrlText");
   const qrEl = document.getElementById("lanQr");
 
-  const port = window.location.port ? `:${window.location.port}` : "";
-  const fullUrl = `${window.location.protocol}//${serverIp}${port}${window.location.pathname}`;
+  let fullUrl;
+  const hostname = window.location.hostname;
+  const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+
+  if (isLocal) {
+    // Running locally — fetch the real LAN IP so other devices can connect
+    try {
+      const infoRes = await fetch("/api/info");
+      const infoData = await infoRes.json();
+      if (infoData.ip && infoData.ip !== "127.0.0.1") {
+        serverIp = infoData.ip;
+      }
+    } catch (e) {
+      console.warn("Could not refresh server IP:", e);
+    }
+    const port = window.location.port ? `:${window.location.port}` : "";
+    fullUrl = `${window.location.protocol}//${serverIp}${port}${window.location.pathname}`;
+  } else {
+    // Hosted on a public domain (e.g. goshare.koyeb.app) — use current URL as-is
+    fullUrl = window.location.href.split("?")[0]; // strip any query params
+  }
+
   urlText.textContent = fullUrl;
 
   qrEl.innerHTML = "";
