@@ -1,0 +1,265 @@
+/* ═══════════════════════════════════════════════
+   GoShare — Shared Styles
+   Used across all pages (home, LAN, P2P)
+   ═══════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap");
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Hanken Grotesk", system-ui, sans-serif;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+}
+
+input {
+    font-size: 16px !important;
+}
+
+/* ── Grid Background (used on every page) ── */
+.grid-bg {
+    background-image:
+        radial-gradient(circle at 50% 50%,
+            rgba(129, 140, 248, 0.02) 0%,
+            transparent 50%),
+        linear-gradient(to right,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px),
+        linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px);
+    background-size:
+        100% 100%,
+        60px 60px,
+        60px 60px;
+}
+
+/* home.html uses a slightly different class name but same pattern */
+.grid-container {
+    background-image:
+        radial-gradient(circle at 50% 50%,
+            rgba(129, 140, 248, 0.03) 0%,
+            transparent 50%),
+        linear-gradient(to right,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px),
+        linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.005) 1px,
+            transparent 1px);
+    background-size:
+        100% 100%,
+        60px 60px,
+        60px 60px;
+}
+
+/* ── Entrance Animation ── */
+.app-entrance {
+    animation: fade-in 0.5s ease-out both;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Modal System ── */
+.modal-overlay {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.open {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    transition: transform 0.3s ease-out;
+}
+
+.modal-overlay.open .modal-content {
+    transform: scale(1);
+}
+
+/* ── Toast Notifications ── */
+.toast-show {
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+.notif-show {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    pointer-events: auto !important;
+}
+
+/* ── Scrollbar Hide ── */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── Progress Bar Glow ── */
+.progress-glow {
+    box-shadow: 0 0 12px rgba(129, 140, 248, 0.5), 0 0 4px rgba(129, 140, 248, 0.3);
+}
+
+/* ── Success Checkmark Animation ── */
+@keyframes checkmark-draw {
+    0% {
+        stroke-dashoffset: 24;
+    }
+
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+.check-animate path {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: checkmark-draw 0.4s ease-out 0.1s forwards;
+}
+
+@keyframes success-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 16px rgba(52, 211, 153, 0);
+    }
+}
+
+.success-ring {
+    animation: success-pulse 1.5s ease-in-out 1;
+}
+
+/* ── Safe Area (for phones with notch/home-bar) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .safe-bottom {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* ── Modern Navbar ── */
+.nav-blur {
+    background: rgba(13, 13, 18, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.nav-pill {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-pill:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.nav-pill.active {
+    background: rgba(255, 255, 255, 1);
+    color: #000;
+    border-color: transparent;
+}
+
+.nav-link {
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: #818cf8;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 12px;
+}
+
+.nav-link.active {
+    color: #fff;
+}
+
+/* Status Indicator */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.status-dot::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    animation: status-pulse 2s infinite;
+}
+
+@keyframes status-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* ── Standardized Borders ── */
+.border-glass {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.border-glass-light {
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* ── Layout Safety ── */
+.content-safe-top {
+    padding-top: 5rem;
+    /* 80px: 64px navbar + 16px buffer */
+}
+
+@media (min-width: 640px) {
+    .content-safe-top {
+        padding-top: 6rem;
+        /* 96px for desktop */
+    }
+}

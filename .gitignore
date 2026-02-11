@@ -1,6 +1,19 @@
+# Binaries
 *.exe
+goshare
+/cmd/goshare/goshare
+
+# Runtime data
 shared_files/
+
+# Development
 private_*/
 .venv/
 __pycache__/
 *.pyc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

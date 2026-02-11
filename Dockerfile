@@ -3,7 +3,7 @@ WORKDIR /app
 COPY go.mod ./
 RUN go mod download
 COPY . .
-RUN go build -o goshare .
+RUN go build -o goshare ./cmd/goshare
 
 FROM alpine:latest
 WORKDIR /app

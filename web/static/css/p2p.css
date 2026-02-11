@@ -1,0 +1,39 @@
+/* ═══════════════════════════════════════════════
+   GoShare — P2P Page Styles
+   P2P-specific animations and layout
+   ═══════════════════════════════════════════════ */
+
+/* ── Pulse Animation (loading states) ── */
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ── QR Code ── */
+#qrcode canvas {
+    border-radius: 8px;
+    max-width: 100%;
+    height: auto !important;
+}
+
+/* ── File Selection Area ── */
+.file-select-area {
+    aspect-ratio: 16 / 10;
+}
+
+@media (max-width: 480px) {
+    .file-select-area {
+        aspect-ratio: 4 / 3;
+    }
+}
