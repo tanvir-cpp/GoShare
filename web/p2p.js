@@ -62,17 +62,13 @@ async function changeName() {
   const input = document.getElementById("newNameInput");
 
   input.value = currentName === "Anonymous" ? "" : currentName;
-  modal.classList.remove("hidden");
-  setTimeout(() => {
-    document.getElementById("nameModalCard").classList.remove("scale-95", "opacity-0");
-    input.focus();
-  }, 10);
+  modal.classList.add("open");
+  input.focus();
 }
 
 function closeNameModal() {
   const modal = document.getElementById("nameModal");
-  document.getElementById("nameModalCard").classList.add("scale-95", "opacity-0");
-  setTimeout(() => modal.classList.add("hidden"), 300);
+  modal.classList.remove("open");
 }
 
 async function saveNameFromModal() {
@@ -145,7 +141,8 @@ function showSelectedFile() {
   selectedFiles.forEach((file, index) => {
     totalSize += file.size;
     const item = document.createElement("div");
-    item.className = "bg-card border border-border rounded-xl p-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2";
+    item.className =
+      "bg-card border border-border rounded-xl p-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2";
     item.innerHTML = `
       <div class="w-8 h-8 text-accent flex-shrink-0">
         <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -203,7 +200,10 @@ async function createRoom() {
     let base = window.location.origin;
 
     // Replace localhost with the real IP if needed
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    if (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    ) {
       base = `${window.location.protocol}//${serverIp}${port}`;
     }
 
@@ -274,7 +274,11 @@ function setupSenderConnection() {
       if (selectedFiles.length > 0) {
         const manifest = {
           sender: localStorage.getItem("user_name") || "Anonymous",
-          files: selectedFiles.map(f => ({ name: f.name, size: f.size, type: f.type }))
+          files: selectedFiles.map((f) => ({
+            name: f.name,
+            size: f.size,
+            type: f.type,
+          })),
         };
         sendSignal("transfer-request", manifest);
       }
@@ -295,7 +299,11 @@ function setupSenderConnection() {
 // ─── Sender: Send Files via DataChannel ───
 async function sendFile() {
   if (isTransferring) return;
-  if (selectedFiles.length === 0 || !dataChannel || dataChannel.readyState !== "open") {
+  if (
+    selectedFiles.length === 0 ||
+    !dataChannel ||
+    dataChannel.readyState !== "open"
+  ) {
     if (selectedFiles.length > 0) transferAccepted = true; // Wait for channel to open
     return;
   }
@@ -332,13 +340,15 @@ async function sendFile() {
     stageEl.textContent = `Establishing Tunnel (${i + 1}/${selectedFiles.length})`;
 
     // Send metadata for this file
-    dataChannel.send(JSON.stringify({
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      index: i,
-      total: selectedFiles.length
-    }));
+    dataChannel.send(
+      JSON.stringify({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        index: i,
+        total: selectedFiles.length,
+      }),
+    );
 
     await new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -435,7 +445,9 @@ async function startReceiver() {
   // Connection timeout — 30 seconds
   const connectTimeout = setTimeout(() => {
     if (!dataChannel || dataChannel.readyState !== "open") {
-      showRecvError("Connection timed out. The sender may have closed the page.");
+      showRecvError(
+        "Connection timed out. The sender may have closed the page.",
+      );
       stopPolling();
       if (pc) pc.close();
     }
@@ -454,7 +466,9 @@ async function startReceiver() {
       pc.iceConnectionState === "disconnected"
     ) {
       console.warn("ICE connection failed/disconnected", pc.iceConnectionState);
-      showRecvError("Peer-to-Peer tunnel collapsed. Try refreshing Both devices.");
+      showRecvError(
+        "Peer-to-Peer tunnel collapsed. Try refreshing Both devices.",
+      );
     }
   };
 
@@ -493,7 +507,7 @@ async function startReceiver() {
           overlay.classList.remove("hidden");
           setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
           return;
-        } catch (e) { }
+        } catch (e) {}
       }
 
       // Check for EOF (end of current file)
@@ -545,7 +559,10 @@ async function startReceiver() {
           const speedEl = document.getElementById("uiSpeed");
           const etaEl = document.getElementById("uiEta");
 
-          const percent = Math.min(100, Math.round((receivedSize / currentFileMeta.size) * 100));
+          const percent = Math.min(
+            100,
+            Math.round((receivedSize / currentFileMeta.size) * 100),
+          );
           bar.style.width = percent + "%";
           percentEl.textContent = percent + "%";
           speedEl.textContent = formatBytes(speed) + "/s";
@@ -674,7 +691,8 @@ async function handleSignal(signal) {
       const { sender, files } = signal.data;
       const count = files.length;
       const totalSize = files.reduce((sum, f) => sum + f.size, 0);
-      document.getElementById("requestInfo").textContent = `${sender} wants to share ${count} file(s) (${formatBytes(totalSize)})`;
+      document.getElementById("requestInfo").textContent =
+        `${sender} wants to share ${count} file(s) (${formatBytes(totalSize)})`;
       document.getElementById("requestModal").classList.remove("hidden");
     } else if (signal.type === "transfer-response") {
       if (signal.data.accepted) {

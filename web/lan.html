@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+    />
     <title>GoShare — LAN</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -35,6 +38,21 @@
 
       body {
         font-family: "Hanken Grotesk", system-ui, sans-serif;
+        touch-action: manipulation;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      input {
+        font-size: 16px !important;
+      }
+
+      .app-entrance {
+        animation: fade-in 0.5s ease-out both;
+      }
+
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
 
       .grid-bg {
@@ -60,49 +78,64 @@
           60px 60px;
       }
 
-      /* Ripple ring animation */
+      /* Ripple rings */
       .me-ring {
         position: absolute;
         top: 50%;
         left: 50%;
         border-radius: 50%;
-        border: 1px solid rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(129, 140, 248, 0.1);
         transform: translate(-50%, -50%);
-        animation: ripple 8s cubic-bezier(0, 0, 0.2, 1) infinite;
+        pointer-events: none;
       }
+
+      .ring-1 { animation: ripple 6s linear infinite; }
+      .ring-2 { animation: ripple 6s linear infinite 2s; }
+      .ring-3 { animation: ripple 6s linear infinite 4s; }
 
       @keyframes ripple {
-        0% {
-          width: 100px;
-          height: 100px;
-          opacity: 0.8;
-        }
-
-        100% {
-          width: 500px;
-          height: 500px;
-          opacity: 0;
-        }
+        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+        20% { opacity: 0.5; }
+        100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
       }
 
-      /* Peer pop-in */
+      /* Scanning line */
+      .scanner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 150%;
+        height: 150%;
+        background: conic-gradient(from 0deg, rgba(82, 114, 255, 0.1) 0deg, transparent 90deg);
+        transform-origin: 50% 50%;
+        animation: scan 4s linear infinite;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      @keyframes scan {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+
+      /* Peer discovery pop */
       .peer {
-        animation: peer-in 0.4s ease-out both;
+        animation: peer-reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
       }
 
-      @keyframes peer-in {
-        from {
+      @keyframes peer-reveal {
+        0% {
           opacity: 0;
-          transform: translate(-50%, -50%) scale(0.5);
+          transform: translate(-50%, -50%) rotate(-10deg);
         }
-
-        to {
+        100% {
           opacity: 1;
         }
       }
 
       .peer:hover {
         transform: translate(-50%, -50%) scale(1.1) rotate(2deg) !important;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         z-index: 10;
       }
 
@@ -119,13 +152,24 @@
         pointer-events: auto !important;
       }
 
-      /* Modal overlay */
+      /* Modal transitions */
       .modal-overlay {
         display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
       }
 
       .modal-overlay.open {
         display: flex;
+        opacity: 1;
+      }
+
+      .modal-content {
+        transition: transform 0.3s ease-out;
+      }
+
+      .modal-overlay.open .modal-content {
+        transform: scale(1);
       }
 
       /* Scrollbar hide for shared bar */
@@ -140,7 +184,7 @@
   </head>
 
   <body
-    class="bg-bg grid-bg min-h-screen text-white flex flex-col items-center pb-20 overflow-x-hidden"
+    class="bg-bg grid-bg h-screen w-screen text-white flex flex-col items-center overflow-hidden"
   >
     <!-- Top Navigation Bar -->
     <nav
@@ -149,36 +193,38 @@
       <div class="flex items-center gap-6">
         <a
           href="/"
-          class="font-semibold text-sm tracking-tight hover:opacity-70 transition"
+          class="font-semibold text-lg sm:text-sm tracking-tight hover:opacity-70 transition"
           ><span class="text-blue-500">go</span>share</a
         >
         <span
-          class="text-[10px] font-medium uppercase tracking-widest text-zinc-500 hidden sm:block"
+          class="text-sm sm:text-[10px] font-medium uppercase tracking-widest text-zinc-500 hidden sm:block"
           >Local Area Network</span
         >
       </div>
       <div class="flex items-center gap-6">
         <a
           href="/p2p.html"
-          class="text-[10px] font-medium text-zinc-500 hover:text-white transition-all uppercase tracking-widest"
+          class="text-sm sm:text-[10px] font-medium text-zinc-500 hover:text-white transition-all uppercase tracking-widest"
           >Global P2P</a
         >
-        <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+        <div class="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
       </div>
     </nav>
 
     <!-- App Container -->
-    <div class="relative z-[1] text-center w-full max-w-[600px] px-4 mt-20 sm:mt-32">
-      <header class="mb-12 sm:mb-16">
-        <h1 class="text-3xl sm:text-4xl font-semibold tracking-tighter mb-4 text-white">
+    <div
+      class="app-entrance flex-1 flex flex-col items-center justify-center relative z-[1] text-center w-full max-w-[600px] px-4 pt-4 pb-24"
+    >
+      <header class="mb-8">
+        <h1 class="text-4xl font-semibold tracking-tighter mb-2 text-white">
           Nearby
         </h1>
-        <p class="text-zinc-500 text-[10px] sm:text-xs font-medium mb-8">
+        <p class="text-zinc-500 text-sm sm:text-xs font-medium mb-6">
           Scanning for active devices on your connection
         </p>
         <button
           onclick="openConnectModal()"
-          class="inline-flex items-center gap-2 px-6 py-2.5 bg-white/[0.03] border border-white/[0.05] rounded-full text-[10px] font-semibold uppercase tracking-widest text-zinc-400 hover:bg-white hover:text-black transition-all"
+          class="inline-flex items-center gap-3 px-10 py-4 bg-white/[0.03] border border-white/[0.05] rounded-full text-sm sm:text-[10px] font-semibold uppercase tracking-widest text-zinc-400 hover:bg-white hover:text-black transition-all"
         >
           <svg
             class="w-3.5 h-3.5"
@@ -200,39 +246,44 @@
       <!-- Device Area -->
       <div
         id="deviceArea"
-        class="relative mx-auto mt-8 w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] bg-white/[0.01] rounded-full"
+        class="relative mx-auto mt-4 w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] bg-white/[0.01] rounded-full"
       >
-        <div class="me-ring"></div>
+        <div class="absolute inset-x-[-50%] inset-y-[-50%] rounded-full overflow-hidden pointer-events-none">
+          <div class="scanner"></div>
+          <div class="me-ring ring-1 w-full h-full"></div>
+          <div class="me-ring ring-2 w-full h-full"></div>
+          <div class="me-ring ring-3 w-full h-full"></div>
+        </div>
         <!-- Me Node -->
         <div
           onclick="openSharedUpload()"
-          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-card border border-white/[0.05] flex flex-col items-center justify-center cursor-pointer z-[5] hover:border-white transition-colors group"
+          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-white/[0.03] backdrop-blur-2xl border border-white/10 flex flex-col items-center justify-center cursor-pointer z-[5] hover:bg-white/[0.05] hover:border-white/20 transition-all group shadow-[0_0_50px_-12px_rgba(255,255,255,0.1)]"
         >
           <div
             id="meIcon"
-            class="w-7 h-7 text-white/40 group-hover:text-white transition-colors"
+            class="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-500"
           ></div>
           <div
             id="meName"
-            class="text-[10px] text-white mt-1 font-semibold"
+            class="text-xs text-white mt-1.5 font-bold tracking-tight"
           ></div>
           <div
-            class="text-[8px] text-zinc-500 uppercase tracking-widest font-medium"
+            class="text-[9px] text-zinc-500 uppercase tracking-[0.2em] font-black opacity-60"
           >
-            You
+            Owner
           </div>
         </div>
       </div>
 
       <!-- Empty State -->
-      <div id="emptyState" class="mt-12 px-4">
+      <div id="emptyState" class="mt-8 px-4">
         <div
           id="deviceCount"
-          class="inline-block px-3 py-1 bg-white/[0.03] border border-white/[0.05] text-zinc-500 rounded-full text-[10px] font-semibold uppercase tracking-widest mb-6"
+          class="inline-block px-5 py-2 bg-white/[0.03] border border-white/[0.05] text-zinc-500 rounded-full text-sm sm:text-[10px] font-semibold uppercase tracking-widest mb-4"
         >
           0 Active
         </div>
-        <p class="text-xs text-zinc-500 font-medium">
+        <p class="text-sm text-zinc-500 font-medium">
           Share your URL to begin local transfers
         </p>
       </div>
@@ -245,7 +296,7 @@
     >
       <button
         onclick="openSharedUpload()"
-        class="flex-1 sm:flex-none flex items-center justify-center gap-3 px-5 py-2.5 bg-white text-black text-[10px] font-semibold uppercase tracking-widest rounded-full transition-opacity hover:opacity-90"
+        class="flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-white text-black text-sm sm:text-[10px] font-semibold uppercase tracking-widest rounded-full transition-opacity hover:opacity-90"
       >
         <span>Broadcast File</span>
       </button>
@@ -278,21 +329,21 @@
       id="modalOverlay"
     >
       <div
-        class="bg-card border border-white/[0.05] rounded-soft-lg p-10 w-full max-w-[400px] shadow-2xl animate-in zoom-in-95 duration-500 ease-out"
+        class="modal-content bg-card border border-white/[0.05] rounded-soft-lg p-10 w-full max-w-[400px] shadow-2xl animate-in zoom-in-95 duration-500 ease-out"
       >
         <div class="flex flex-col items-center text-center mb-10">
           <div
-            class="w-12 h-12 bg-white/[0.03] border border-white/[0.05] text-white rounded-2xl flex items-center justify-center mb-4"
+            class="w-14 h-14 bg-white/[0.03] border border-white/[0.05] text-white rounded-2xl flex items-center justify-center mb-6"
             id="modalIcon"
           ></div>
           <h2
-            class="text-xl font-semibold tracking-tight text-white mb-1"
+            class="text-2xl font-semibold tracking-tight text-white mb-2"
             id="modalName"
           >
             Select Files
           </h2>
           <p
-            class="text-[10px] uppercase tracking-widest text-zinc-500 font-medium"
+            class="text-xs sm:text-[10px] uppercase tracking-widest text-zinc-500 font-medium"
           >
             Secure Local Transfer
           </p>
@@ -500,38 +551,37 @@
       </div>
     </div>
 
-    <!-- Connect Device Modal -->
     <div
       id="connectModal"
-      class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6"
+      class="modal-overlay fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] items-center justify-center p-6"
     >
       <div
-        class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl scale-95 opacity-0 transition-all duration-300"
+        class="modal-content bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl transition-all duration-300"
         id="connectModalCard"
       >
-        <h3 class="text-xl font-bold mb-1 uppercase tracking-tight">
+        <h3 class="text-3xl font-bold mb-2 uppercase tracking-tight">
           Connect Device
         </h3>
-        <p class="text-zinc-500 text-[10px] uppercase tracking-widest mb-8">
+        <p class="text-zinc-500 text-sm sm:text-[10px] uppercase tracking-widest mb-10">
           Scan QR or enter URL on another device
         </p>
 
         <div
           id="lanQr"
-          class="bg-white p-4 rounded-2xl mx-auto mb-8 w-max shadow-xl"
+          class="bg-white p-8 rounded-2xl mx-auto mb-10 w-max shadow-xl"
         ></div>
 
         <div
-          class="bg-bg border border-border rounded-xl px-4 py-3 mb-8 flex items-center justify-between gap-4 cursor-pointer hover:border-white transition-colors group"
+          class="bg-bg border border-border rounded-xl px-5 py-4 mb-8 flex items-center justify-between gap-4 cursor-pointer hover:border-white transition-colors group"
           onclick="copyConnectUrl()"
         >
           <span
             id="lanUrlText"
-            class="text-xs text-zinc-400 truncate group-hover:text-white"
+            class="text-sm sm:text-xs text-zinc-400 truncate group-hover:text-white"
             >Loading URL...</span
           >
           <svg
-            class="w-4 h-4 text-zinc-600 group-hover:text-white"
+            class="w-5 h-5 text-zinc-600 group-hover:text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -547,47 +597,46 @@
 
         <button
           onclick="closeConnectModal()"
-          class="w-full py-3 rounded-xl border border-border font-bold text-[10px] uppercase tracking-widest hover:bg-white/5 transition"
+          class="w-full py-4 rounded-xl border border-border font-bold text-xs sm:text-[10px] uppercase tracking-widest hover:bg-white/5 transition"
         >
           Close Window
         </button>
       </div>
     </div>
 
-    <!-- Name Change Modal -->
     <div
       id="nameModal"
-      class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6"
+      class="modal-overlay fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] items-center justify-center p-6"
     >
       <div
-        class="bg-card border border-white/[0.05] rounded-soft-lg p-8 w-full max-w-sm shadow-2xl scale-95 opacity-0 transition-all duration-300"
+        class="modal-content bg-card border border-white/[0.05] rounded-soft-lg p-10 w-full max-w-sm shadow-2xl transition-all duration-300"
         id="nameModalCard"
       >
-        <h3 class="text-xl font-semibold tracking-tight text-white mb-1">Identity</h3>
-        <p class="text-zinc-500 text-xs font-medium mb-8">
+        <h3 class="text-2xl font-semibold tracking-tight text-white mb-2">Identity</h3>
+        <p class="text-zinc-500 text-sm sm:text-xs font-medium mb-10">
           Update how you appear on the network
         </p>
 
-        <div class="relative mb-8">
+        <div class="relative mb-10">
           <input
             type="text"
             id="newNameInput"
-            class="w-full bg-white/[0.02] border border-white/[0.05] rounded-full px-5 py-3 outline-none focus:border-white transition-colors text-white text-sm"
+            class="w-full bg-white/[0.02] border border-white/[0.05] rounded-full px-6 py-4 outline-none focus:border-white transition-colors text-white text-base"
             placeholder="Name"
             maxlength="20"
           />
         </div>
 
-        <div class="flex gap-2">
+        <div class="flex gap-4">
           <button
             onclick="closeNameModal()"
-            class="flex-1 py-3 font-semibold text-[10px] uppercase tracking-widest text-zinc-500 hover:text-white transition"
+            class="flex-1 py-4 font-semibold text-xs sm:text-[10px] uppercase tracking-widest text-zinc-500 hover:text-white transition"
           >
             Cancel
           </button>
           <button
             onclick="saveNameFromModal()"
-            class="flex-1 py-3 rounded-full bg-white text-black font-semibold text-[10px] uppercase tracking-widest hover:opacity-90 transition"
+            class="flex-1 py-4 rounded-full bg-white text-black font-semibold text-xs sm:text-[10px] uppercase tracking-widest hover:opacity-90 transition"
           >
             Update
           </button>

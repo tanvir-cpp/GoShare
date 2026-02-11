@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+    />
     <title>GoShare — P2P</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -34,6 +37,21 @@
 
       body {
         font-family: "Hanken Grotesk", system-ui, sans-serif;
+        touch-action: manipulation;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      input {
+        font-size: 16px !important;
+      }
+
+      .app-entrance {
+        animation: fade-in 0.5s ease-out both;
+      }
+
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
 
       .grid-bg {
@@ -76,11 +94,31 @@
       #qrcode canvas {
         border-radius: 8px;
       }
+
+      /* Modal transitions */
+      .modal-overlay {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .modal-overlay.open {
+        display: flex;
+        opacity: 1;
+      }
+
+      .modal-content {
+        transition: transform 0.3s ease-out;
+      }
+
+      .modal-overlay.open .modal-content {
+        transform: scale(1);
+      }
     </style>
   </head>
 
   <body
-    class="bg-bg grid-bg min-h-screen text-white flex flex-col items-center select-none"
+    class="bg-bg grid-bg h-screen w-screen text-white flex flex-col items-center select-none overflow-hidden"
   >
     <!-- Top Navigation Bar -->
     <nav
@@ -89,11 +127,11 @@
       <div class="flex items-center gap-6">
         <a
           href="/"
-          class="font-semibold text-sm tracking-tight hover:opacity-70 transition"
+          class="font-semibold text-base sm:text-sm tracking-tight hover:opacity-70 transition"
           ><span class="text-blue-500">go</span>share</a
         >
         <span
-          class="text-[10px] font-medium uppercase tracking-widest text-zinc-500 hidden sm:block"
+          class="text-xs sm:text-[10px] font-medium uppercase tracking-widest text-zinc-500 hidden sm:block"
           >Global P2P</span
         >
       </div>
@@ -106,28 +144,28 @@
         </button>
         <a
           href="/lan.html"
-          class="text-[10px] font-medium text-zinc-500 hover:text-white transition-all uppercase tracking-widest"
+          class="text-xs sm:text-[10px] font-medium text-zinc-500 hover:text-white transition-all uppercase tracking-widest"
           >Nearby LAN</a
         >
         <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
       </div>
     </nav>
 
-    <main class="flex-1 w-full max-w-4xl px-6 mt-20 sm:mt-32">
+    <main class="app-entrance flex-1 flex flex-col items-center justify-center w-full max-w-4xl px-6 pt-14 pb-14">
       <!-- SENDER VIEW (default) -->
       <div id="senderView" class="">
-        <div class="text-center mb-12 sm:mb-16">
+        <div class="text-center mb-8">
           <div
-            class="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/[0.05] rounded-full text-[10px] font-medium tracking-wide text-zinc-400 mb-8"
+            class="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/[0.05] rounded-full text-xs sm:text-[10px] font-medium tracking-wide text-zinc-400 mb-6"
           >
             <span>Identity:</span>
             <span id="userNameDisplay" class="text-white">Anonymous</span>
           </div>
-          <h1 class="text-3xl sm:text-4xl font-semibold tracking-tighter mb-4 text-white">
+          <h1 class="text-4xl sm:text-4xl font-semibold tracking-tighter mb-2 text-white">
             Anywhere
           </h1>
           <p
-            class="text-zinc-500 text-[10px] sm:text-xs font-medium uppercase tracking-widest"
+            class="text-zinc-500 text-sm sm:text-xs font-medium uppercase tracking-widest"
           >
             Secure browser-to-browser tunnel
           </p>
@@ -181,31 +219,31 @@
             class="bg-card border border-white/[0.05] rounded-soft-lg p-10 text-center shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500"
           >
             <p
-              class="text-zinc-500 text-[9px] uppercase tracking-widest font-semibold mb-8"
+              class="text-zinc-500 text-xs sm:text-[9px] uppercase tracking-widest font-semibold mb-8"
             >
               Access Key Generated
             </p>
             <div
               id="qrcode"
-              class="flex justify-center mb-8 p-4 bg-white rounded-xl"
+              class="flex justify-center mb-10 p-6 bg-white rounded-xl"
             ></div>
             <div
-              class="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-full pl-6 pr-2 py-2"
+              class="flex items-center gap-3 bg-white/[0.02] border border-white/[0.05] rounded-full pl-6 pr-3 py-3"
             >
               <span
-                class="flex-1 text-[10px] truncate text-zinc-400 font-mono"
+                class="flex-1 text-sm sm:text-[10px] truncate text-zinc-400 font-mono"
                 id="shareUrl"
               ></span>
               <button
                 onclick="copyLink()"
-                class="px-4 py-2 bg-white text-black rounded-full text-[9px] font-semibold uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-opacity"
+                class="px-5 py-3 bg-white text-black rounded-full text-xs sm:text-[9px] font-semibold uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-opacity"
               >
                 Copy
               </button>
             </div>
             <div
               id="waitingStatus"
-              class="mt-8 flex items-center justify-center gap-3 text-zinc-500 text-[10px] font-medium uppercase tracking-widest"
+              class="mt-10 flex items-center justify-center gap-3 text-zinc-500 text-xs sm:text-[10px] font-medium uppercase tracking-widest"
             >
               <div
                 class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"
@@ -393,40 +431,39 @@
       </div>
     </div>
 
-    <!-- Name Change Modal -->
     <div
       id="nameModal"
-      class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6"
+      class="modal-overlay fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] items-center justify-center p-6"
     >
       <div
-        class="bg-card border border-white/[0.05] rounded-soft-lg p-8 w-full max-w-sm shadow-2xl scale-95 opacity-0 transition-all duration-300"
+        class="modal-content bg-card border border-white/[0.05] rounded-soft-lg p-10 w-full max-w-sm shadow-2xl transition-all duration-300"
         id="nameModalCard"
       >
-        <h3 class="text-xl font-semibold tracking-tight text-white mb-1">Identity</h3>
-        <p class="text-zinc-500 text-xs font-medium mb-8">
+        <h3 class="text-2xl font-semibold tracking-tight text-white mb-2">Identity</h3>
+        <p class="text-zinc-500 text-sm sm:text-xs font-medium mb-10">
           Update how you appear in global transfers
         </p>
 
-        <div class="relative mb-8">
+        <div class="relative mb-10">
           <input
             type="text"
             id="newNameInput"
-            class="w-full bg-white/[0.02] border border-white/[0.05] rounded-full px-5 py-3 outline-none focus:border-white transition-colors text-white text-sm"
+            class="w-full bg-white/[0.02] border border-white/[0.05] rounded-full px-6 py-4 outline-none focus:border-white transition-colors text-white text-base"
             placeholder="Name"
             maxlength="20"
           />
         </div>
 
-        <div class="flex gap-2">
+        <div class="flex gap-4">
           <button
             onclick="closeNameModal()"
-            class="flex-1 py-3 font-semibold text-[10px] uppercase tracking-widest text-zinc-500 hover:text-white transition"
+            class="flex-1 py-4 font-semibold text-xs sm:text-[10px] uppercase tracking-widest text-zinc-600 hover:text-white transition"
           >
             Cancel
           </button>
           <button
             onclick="saveNameFromModal()"
-            class="flex-1 py-3 rounded-full bg-white text-black font-semibold text-[10px] uppercase tracking-widest hover:opacity-90 transition"
+            class="flex-1 py-4 rounded-full bg-white text-black font-semibold text-xs sm:text-[10px] uppercase tracking-widest hover:opacity-90 transition"
           >
             Update
           </button>
@@ -434,19 +471,15 @@
       </div>
     </div>
 
-    <footer class="text-center text-zinc-600 text-[10px] uppercase tracking-widest font-medium py-12">
-      GoShare — Secure P2P
+    <footer class="py-6 border-t border-white/[0.04] w-full max-w-4xl mx-auto px-6 flex flex-col sm:flex-row shadow-2xl items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+        <span class="text-zinc-500 text-[10px] uppercase tracking-widest font-semibold">Global Pipeline Active</span>
+      </div>
+      <div class="text-center sm:text-right">
+        <p class="text-zinc-600 text-[10px] uppercase tracking-widest font-medium">GoShare — Secure P2P Protocol</p>
+      </div>
     </footer>
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-        />
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-      </svg>
-    </button>
 
     <div
       id="toastEl"

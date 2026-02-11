@@ -95,17 +95,13 @@ async function changeName() {
   const input = document.getElementById("newNameInput");
 
   input.value = currentName === "Anonymous" ? "" : currentName;
-  modal.classList.remove("hidden");
-  setTimeout(() => {
-    document.getElementById("nameModalCard").classList.remove("scale-95", "opacity-0");
-    input.focus();
-  }, 10);
+  modal.classList.add("open");
+  input.focus();
 }
 
 function closeNameModal() {
   const modal = document.getElementById("nameModal");
-  document.getElementById("nameModalCard").classList.add("scale-95", "opacity-0");
-  setTimeout(() => modal.classList.add("hidden"), 300);
+  modal.classList.remove("open");
 }
 
 async function saveNameFromModal() {
@@ -153,7 +149,8 @@ function connectSSE() {
     // Backup: standard notification too
     document.getElementById("notifTitle").textContent =
       d.from_name + " sent " + incomingFiles.length + " file(s)";
-    document.getElementById("notifSub").textContent = incomingFiles[0] + (incomingFiles.length > 1 ? " and more..." : "");
+    document.getElementById("notifSub").textContent =
+      incomingFiles[0] + (incomingFiles.length > 1 ? " and more..." : "");
   });
   evtSource.addEventListener("shared-update", () => loadSharedFiles());
   evtSource.onerror = () => setTimeout(connectSSE, 3000);
@@ -172,7 +169,7 @@ function renderPeers() {
 
   const centerX = area.offsetWidth / 2;
   const centerY = area.offsetHeight / 2;
-  const R = Math.min(centerX, centerY) * 0.7;
+  const R = Math.min(centerX, centerY) * 0.72;
 
   ids.forEach((id, i) => {
     const angle = ((2 * Math.PI) / ids.length) * i - Math.PI / 2;
@@ -181,17 +178,23 @@ function renderPeers() {
     const p = peers[id];
     const el = document.createElement("div");
     el.className =
-      "peer absolute w-[clamp(70px,20vw,84px)] h-[clamp(70px,20vw,84px)] rounded-2xl bg-card border border-border flex flex-col items-center justify-center cursor-pointer transition-all shadow-md hover:border-accent hover:bg-card-hover hover:shadow-xl";
+      "peer absolute w-24 h-24 rounded-full bg-card/40 backdrop-blur-xl border border-white/[0.05] flex flex-col items-center justify-center cursor-pointer transition-all shadow-2xl hover:border-accent/50 hover:bg-card/60 group";
     el.style.cssText =
       "left:" + x + "px;top:" + y + "px;transform:translate(-50%,-50%)";
-    el.innerHTML =
-      '<div class="w-6 h-6 text-accent">' +
-      getDeviceSvg(p.icon) +
-      '</div><div class="text-[clamp(0.55rem,1.8vw,0.7rem)] text-white mt-1 font-semibold max-w-[90%] whitespace-nowrap overflow-hidden text-ellipsis">' +
-      p.name +
-      '</div><div class="text-[0.55rem] text-muted">' +
-      p.type +
-      "</div>";
+    el.innerHTML = `
+      <div class="relative w-10 h-10 flex items-center justify-center mb-1">
+        <div class="absolute inset-0 bg-accent/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <div class="w-7 h-7 text-accent/80 group-hover:text-accent transition-colors relative z-10">
+          ${getDeviceSvg(p.icon)}
+        </div>
+      </div>
+      <div class="text-[10px] text-zinc-200 font-bold tracking-tight max-w-[80%] truncate relative z-10">
+        ${p.name}
+      </div>
+      <div class="text-[8px] text-zinc-500 uppercase tracking-widest font-black opacity-60 group-hover:opacity-100 transition-opacity">
+        ${p.type}
+      </div>
+    `;
     el.onclick = () => {
       targetPeer = id;
       document.getElementById("modalIcon").innerHTML = getDeviceSvg(p.icon);
@@ -241,7 +244,8 @@ function upload(files, to, prefix) {
   const successBtn = document.getElementById("successCloseBtn");
   const iconBox = document.getElementById("transferIcon");
 
-  nameEl.textContent = files.length > 1 ? `${files.length} Files` : files[0].name;
+  nameEl.textContent =
+    files.length > 1 ? `${files.length} Files` : files[0].name;
   stageEl.textContent = "Negotiating...";
   bar.style.width = "0%";
   percentEl.textContent = "0%";
@@ -471,7 +475,8 @@ function renderQueue() {
   if (queuedFiles.length > 0) {
     queuedFiles.forEach((f, i) => {
       const item = document.createElement("div");
-      item.className = "bg-bg/50 rounded-lg p-2 text-xs flex items-center justify-between border border-border";
+      item.className =
+        "bg-bg/50 rounded-lg p-2 text-xs flex items-center justify-between border border-border";
       item.innerHTML = `<span class="truncate pr-2">${f.name}</span> <span class="text-muted">${formatBytes(f.size)}</span>`;
       list.appendChild(item);
     });
@@ -534,17 +539,12 @@ function openConnectModal() {
     correctLevel: QRCode.CorrectLevel.M,
   });
 
-  modal.classList.remove("hidden");
-  setTimeout(() => {
-    modalContent.classList.remove("scale-95", "opacity-0");
-  }, 10);
+  modal.classList.add("open");
 }
 
 function closeConnectModal() {
   const modal = document.getElementById("connectModal");
-  const modalContent = document.getElementById("connectModalCard");
-  modalContent.classList.add("scale-95", "opacity-0");
-  setTimeout(() => modal.classList.add("hidden"), 300);
+  modal.classList.remove("open");
 }
 
 function copyConnectUrl() {
