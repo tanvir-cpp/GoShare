@@ -1,13 +1,3 @@
-const myId =
-  localStorage.getItem("device_id") ||
-  (() => {
-    const id =
-      "dev_" +
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-    localStorage.setItem("device_id", id);
-    return id;
-  })();
 let peers = {},
   targetPeer = null,
   queuedFiles = [],
@@ -18,39 +8,6 @@ let peers = {},
   currentXhr = null,
   transferStartTime = 0,
   abortCurrentTransfer = false;
-
-// SVG icon mapping for device icons (matches backend icon identifiers)
-const deviceIcons = {
-  fox: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" /></svg>',
-  panda:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>',
-  owl: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>',
-  wolf: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 7.5 16.5-4.125M12 6.75c-2.708 0-5.363.224-7.948.655C2.999 7.58 2.25 8.507 2.25 9.574v9.176A2.25 2.25 0 0 0 4.5 21h15a2.25 2.25 0 0 0 2.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169A48.329 48.329 0 0 0 12 6.75Z" /></svg>',
-  bear: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" /></svg>',
-  hawk: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>',
-  cat: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" /></svg>',
-  dolphin:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>',
-  tiger:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /></svg>',
-  lion: '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>',
-  koala:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-1.5.75a3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0 3.354 3.354 0 0 0-3 0 3.354 3.354 0 0 1-3 0L3 16.5m15-3.379a48.474 48.474 0 0 0-6-.371c-2.032 0-4.034.126-6 .371m12 0c.39.049.777.102 1.163.16 1.07.16 1.837 1.094 1.837 2.175v5.169c0 .621-.504 1.125-1.125 1.125H4.125A1.125 1.125 0 0 1 3 20.625v-5.17c0-1.08.768-2.014 1.837-2.174A47.78 47.78 0 0 1 6 13.12M12.265 3.11a.375.375 0 1 1-.53 0L12 2.845l.265.265Z" /></svg>',
-  raven:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>',
-  otter:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" /></svg>',
-  shark:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" /></svg>',
-  elephant:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /></svg>',
-  butterfly:
-    '<svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>',
-};
-
-function getDeviceSvg(iconName) {
-  return deviceIcons[iconName] || deviceIcons.fox;
-}
 
 register().then(() => {
   connectSSE();
@@ -96,20 +53,7 @@ async function register() {
   }
 }
 
-async function changeName() {
-  const currentName = document.getElementById("meName").textContent;
-  const modal = document.getElementById("nameModal");
-  const input = document.getElementById("newNameInput");
-
-  input.value = currentName === "Anonymous" ? "" : currentName;
-  modal.classList.add("open");
-  input.focus();
-}
-
-function closeNameModal() {
-  const modal = document.getElementById("nameModal");
-  modal.classList.remove("open");
-}
+// Identity helpers moved to shared.js (changeName, closeNameModal)
 
 async function saveNameFromModal() {
   const input = document.getElementById("newNameInput");
@@ -119,7 +63,7 @@ async function saveNameFromModal() {
   if (newName && newName !== currentName) {
     localStorage.setItem("user_name", newName);
     await register();
-    toast("Name updated!");
+    showToast("Name updated!");
   }
   closeNameModal();
 }
@@ -151,13 +95,15 @@ function connectSSE() {
     const modal = document.getElementById("lanRequestModal");
     const info = document.getElementById("lanRequestInfo");
     info.textContent = `${d.from_name} wants to send you ${incomingFiles.length} file(s).`;
-    modal.classList.remove("hidden");
+    modal.classList.add("open");
 
     // Backup: standard notification too
+    notifFile = incomingFiles[0];
     document.getElementById("notifTitle").textContent =
       d.from_name + " sent " + incomingFiles.length + " file(s)";
     document.getElementById("notifSub").textContent =
       incomingFiles[0] + (incomingFiles.length > 1 ? " and more..." : "");
+    document.getElementById("notif").classList.add("notif-show");
   });
   evtSource.addEventListener("shared-update", () => loadSharedFiles());
   evtSource.onerror = () => setTimeout(connectSSE, 3000);
@@ -165,10 +111,14 @@ function connectSSE() {
 
 function renderPeers() {
   const area = document.getElementById("deviceArea");
-  area.querySelectorAll(".peer").forEach((el) => el.remove());
+  area.querySelectorAll(".peer-node").forEach((el) => el.remove());
   const ids = Object.keys(peers);
   const emptyState = document.getElementById("emptyState");
-  emptyState.style.display = ids.length ? "none" : "block";
+  if (ids.length) {
+    emptyState.classList.add("hidden");
+  } else {
+    emptyState.classList.remove("hidden");
+  }
 
   // Update device count
   document.getElementById("deviceCount").textContent =
@@ -176,35 +126,29 @@ function renderPeers() {
 
   const centerX = area.offsetWidth / 2;
   const centerY = area.offsetHeight / 2;
-  const R = Math.min(centerX, centerY) * 0.72;
+  const R = Math.min(centerX, centerY) * 0.75;
 
   ids.forEach((id, i) => {
     const angle = ((2 * Math.PI) / ids.length) * i - Math.PI / 2;
     const x = centerX + R * Math.cos(angle);
     const y = centerY + R * Math.sin(angle);
     const p = peers[id];
+
     const el = document.createElement("div");
-    el.className =
-      "peer absolute w-[clamp(70px,22vw,96px)] h-[clamp(70px,22vw,96px)] rounded-full bg-card/40 backdrop-blur-xl border border-white/[0.05] flex flex-col items-center justify-center cursor-pointer transition-all shadow-2xl hover:border-accent/50 hover:bg-card/60 group";
-    el.style.cssText =
-      "left:" + x + "px;top:" + y + "px;transform:translate(-50%,-50%)";
+    el.className = "peer-node";
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    el.style.transform = "translate(-50%,-50%)";
+
     el.innerHTML = `
-      <div class="relative w-8 h-8 flex items-center justify-center mb-1">
-        <div class="absolute inset-0 bg-accent/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <div class="w-6 h-6 text-accent/80 group-hover:text-accent transition-colors relative z-10">
-          ${getDeviceSvg(p.icon)}
-        </div>
-      </div>
-      <div class="text-[9px] text-zinc-200 font-bold tracking-tight max-w-[80%] truncate relative z-10">
-        ${p.name}
-      </div>
-      <div class="text-[7px] text-zinc-500 uppercase tracking-widest font-black opacity-60 group-hover:opacity-100 transition-opacity">
-        ${p.type}
-      </div>
+      <div style="width: 32px; height: 32px; color: var(--accent);">${getDeviceSvg(p.icon)}</div>
+      <div class="peer-name">${p.name}</div>
     `;
+
     el.onclick = () => {
       targetPeer = id;
-      document.getElementById("modalIcon").innerHTML = getDeviceSvg(p.icon);
+      const mIcon = document.getElementById("modalIcon");
+      if (mIcon) mIcon.innerHTML = getDeviceSvg(p.icon);
       document.getElementById("modalName").textContent = p.name;
       document.getElementById("modalOverlay").classList.add("open");
     };
@@ -216,13 +160,15 @@ function closeModal() {
   document.getElementById("modalOverlay").classList.remove("open");
   targetPeer = null;
   queuedFiles = [];
-  renderQueue();
+  renderQueue("transfer");
 }
 function openSharedUpload() {
   document.getElementById("sharedOverlay").classList.add("open");
 }
 function closeSharedOverlay() {
   document.getElementById("sharedOverlay").classList.remove("open");
+  queuedFiles = [];
+  renderQueue("shared");
 }
 
 // File input change handlers are set up in setupDragDrop()
@@ -260,10 +206,12 @@ function upload(files, to, prefix) {
   etaEl.textContent = "--:--";
   abortBtn.classList.remove("hidden");
   successBtn.classList.add("hidden");
-  iconBox.classList.remove("bg-success", "border-success", "success-ring");
-  iconBox.innerHTML = `<svg class="w-7 h-7 sm:w-8 sm:h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" /></svg>`;
+  if (iconBox) {
+    iconBox.classList.remove("bg-success", "border-success", "success-ring");
+    iconBox.innerHTML = `<svg style="width: 32px; height: 32px; color: var(--text-dim);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" /></svg>`;
+  }
 
-  overlay.style.display = "flex";
+  overlay.classList.add("open");
   setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
 
   transferStartTime = Date.now();
@@ -302,9 +250,11 @@ function upload(files, to, prefix) {
       etaEl.textContent = "0:00";
 
       // Success Animation — green checkmark with pulse
-      iconBox.classList.remove("bg-white/[0.03]", "border-white/[0.05]");
-      iconBox.classList.add("bg-success", "border-success", "success-ring");
-      iconBox.innerHTML = `<svg class="w-8 h-8 sm:w-10 sm:h-10 text-white check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+      if (iconBox) {
+        iconBox.classList.remove("bg-white/[0.03]", "border-white/[0.05]");
+        iconBox.classList.add("bg-success", "border-success", "success-ring");
+        iconBox.innerHTML = `<svg style="width: 40px; height: 40px; color: #fff;" class="check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+      }
       abortBtn.classList.add("hidden");
       successBtn.classList.remove("hidden");
 
@@ -332,9 +282,9 @@ function closeTransferOverlay() {
 
   card.classList.add("scale-95", "opacity-0");
   setTimeout(() => {
-    overlay.style.display = "none";
+    overlay.classList.remove("open");
     // Reset icon and classes for next time
-    iconBox.classList.remove("bg-success", "border-success", "success-ring");
+    if (iconBox) iconBox.classList.remove("bg-success", "border-success", "success-ring");
     closeModal();
     closeSharedOverlay();
   }, 300);
@@ -343,7 +293,7 @@ function closeTransferOverlay() {
 function abortTransfer() {
   if (currentXhr) {
     currentXhr.abort();
-    toast("Transfer cancelled");
+    showToast("Transfer cancelled");
   }
   closeTransferOverlay();
 }
@@ -354,26 +304,32 @@ async function loadSharedFiles() {
     const files = await r.json();
     const bar = document.getElementById("sharedBar");
     if (!bar) return;
-    bar.querySelectorAll(".file-chip").forEach((el) => el.remove());
-    if (!files || !Array.isArray(files)) return;
+
+    // Clear existing chips
+    bar.innerHTML = '<!-- File chips will be dynamically added here -->';
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      bar.classList.add("hidden");
+      return;
+    }
+
+    bar.classList.remove("hidden");
     files.forEach((f) => {
       const chip = document.createElement("div");
-      chip.className =
-        "file-chip flex-shrink-0 flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2 transition-all hover:border-accent hover:bg-card-hover max-w-[180px] cursor-pointer";
-      chip.title = "Click to download " + f.name;
-      chip.innerHTML =
-        '<span class="text-accent w-4 h-4 flex-shrink-0"><svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg></span>' +
-        '<div class="flex-1 min-w-0 text-left">' +
-        '<span class="block text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">' +
-        f.name +
-        "</span>" +
-        '<span class="text-[0.65rem] text-muted">' +
-        formatBytes(f.size) +
-        "</span>" +
-        "</div>" +
-        '<span class="text-muted text-lg leading-none cursor-pointer hover:text-danger" title="Delete file" onclick="event.stopPropagation();delFile(\'' +
-        f.name +
-        "')\">×</span>";
+      chip.className = "file-chip";
+      chip.style.cssText = "flex-shrink: 0; display: flex; align-items: center; gap: 0.75rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 0.5rem 1rem; cursor: pointer; transition: all 0.2s;";
+      chip.title = "Download " + f.name;
+      chip.innerHTML = `
+        <span style="color: var(--accent); display: flex;">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
+          </svg>
+        </span>
+        <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; font-weight: 500;">
+          ${f.name}
+        </div>
+        <span style="color: var(--text-dim); font-size: 1.25rem; font-weight: 300; line-height: 1;" onclick="event.stopPropagation();delFile('${f.name}')">×</span>
+      `;
       chip.onclick = () =>
         (location.href = "/download/" + f.name + "?id=" + myId);
       bar.appendChild(chip);
@@ -389,22 +345,12 @@ async function delFile(n) {
 }
 function downloadNotifFile() {
   if (notifFile) location.href = "/download/" + notifFile + "?id=" + myId;
+  closeNotif();
+}
+function closeNotif() {
   document.getElementById("notif").classList.remove("notif-show");
 }
-function toast(m) {
-  const t = document.getElementById("toast");
-  t.textContent = m;
-  t.classList.add("toast-show");
-  setTimeout(() => t.classList.remove("toast-show"), 2000);
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-}
+// Toast and formatBytes removed (now in shared.js)
 
 function setupDragDrop() {
   const configs = [
@@ -432,11 +378,7 @@ function setupDragDrop() {
     // File selected via picker
     input.addEventListener("change", () => {
       if (input.files.length) {
-        if (prefix === "transfer") {
-          queueFiles(input.files);
-        } else {
-          upload(input.files, getTo(), prefix);
-        }
+        queueFiles(input.files, prefix);
         input.value = "";
       }
     });
@@ -464,11 +406,7 @@ function setupDragDrop() {
       (e) => {
         const files = e.dataTransfer.files;
         if (files.length) {
-          if (prefix === "transfer") {
-            queueFiles(files);
-          } else {
-            upload(files, getTo(), prefix);
-          }
+          queueFiles(files, prefix);
         }
       },
       false,
@@ -476,23 +414,25 @@ function setupDragDrop() {
   });
 }
 
-function queueFiles(files) {
+function queueFiles(files, prefix) {
   queuedFiles = Array.from(files);
-  renderQueue();
+  renderQueue(prefix);
 }
 
-function renderQueue() {
-  const list = document.getElementById("modalFileList");
-  const sendBtn = document.getElementById("modalSendBtn");
-  const dropArea = document.getElementById("modalDropArea");
+function renderQueue(prefix) {
+  const isShared = prefix === "shared";
+  const list = document.getElementById(isShared ? "sharedFileList" : "modalFileList");
+  const sendBtn = document.getElementById(isShared ? "sharedSendBtn" : "modalSendBtn");
+  const dropArea = document.getElementById(isShared ? "sharedDropArea" : "modalDropArea");
+
+  if (!list || !sendBtn || !dropArea) return;
 
   list.innerHTML = "";
   if (queuedFiles.length > 0) {
     queuedFiles.forEach((f, i) => {
       const item = document.createElement("div");
-      item.className =
-        "bg-bg/50 rounded-lg p-2 text-xs flex items-center justify-between border border-border";
-      item.innerHTML = `<span class="truncate pr-2">${f.name}</span> <span class="text-muted">${formatBytes(f.size)}</span>`;
+      item.style.cssText = "background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;";
+      item.innerHTML = `<span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">${f.name}</span> <span style="color: var(--text-dim); font-size: 0.7rem;">${formatBytes(f.size)}</span>`;
       list.appendChild(item);
     });
     list.classList.remove("hidden");
@@ -505,14 +445,17 @@ function renderQueue() {
   }
 }
 
-function startLanUpload() {
+function startLanUpload(isShared) {
   if (queuedFiles.length === 0) return;
-  upload(queuedFiles, targetPeer, "transfer");
+  const prefix = isShared ? "shared" : "transfer";
+  const to = isShared ? null : targetPeer;
+  upload(queuedFiles, to, prefix);
   queuedFiles = [];
+  renderQueue(prefix);
 }
 
 function respondToLan(accepted) {
-  document.getElementById("lanRequestModal").classList.add("hidden");
+  document.getElementById("lanRequestModal").classList.remove("open");
   if (accepted && incomingFiles.length > 0) {
     // Start downloading each file
     incomingFiles.forEach((name, i) => {
@@ -584,7 +527,7 @@ function closeConnectModal() {
 function copyConnectUrl() {
   const url = document.getElementById("lanUrlText").textContent;
   navigator.clipboard.writeText(url).then(() => {
-    toast("URL copied!");
+    showToast("URL copied!");
   });
 }
 function copyUrl() {
@@ -592,7 +535,7 @@ function copyUrl() {
   navigator.clipboard
     .writeText(url)
     .then(() => {
-      toast("URL copied to clipboard!");
+      showToast("URL copied to clipboard!");
     })
     .catch(() => {
       // Fallback for older browsers
@@ -602,6 +545,6 @@ function copyUrl() {
       input.select();
       document.execCommand("copy");
       document.body.removeChild(input);
-      toast("URL copied!");
+      showToast("URL copied!");
     });
 }

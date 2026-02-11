@@ -1,108 +1,281 @@
-/* ═══════════════════════════════════════════════
-   GoShare — LAN Page Styles
-   Radar animation, device discovery, peer nodes
-   ═══════════════════════════════════════════════ */
+/* Page specific styles for LAN Nearby */
 
-/* ── Ripple Rings (radar effect) ── */
-.me-ring {
+.device-radar {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    margin: 2rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s ease;
+}
+
+.radar-sweep {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    inset: 0;
     border-radius: 50%;
-    border: 1px solid rgba(129, 140, 248, 0.1);
-    transform: translate(-50%, -50%);
+    background: conic-gradient(from 0deg, transparent, rgba(37, 99, 235, 0.03) 10deg, transparent 40deg);
+    animation: sweep 6s linear infinite;
     pointer-events: none;
+    opacity: 0.5;
 }
 
-.ring-1 {
-    animation: ripple 6s linear infinite;
+@keyframes sweep {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.ring-2 {
-    animation: ripple 6s linear infinite 2s;
+@media (max-width: 768px) {
+    .device-radar {
+        width: 450px;
+        height: 450px;
+    }
 }
 
-.ring-3 {
-    animation: ripple 6s linear infinite 4s;
+@media (max-width: 500px) {
+    .device-radar {
+        width: 320px;
+        height: 320px;
+    }
 }
 
-@keyframes ripple {
+.radar-circle {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    animation: pulse-ring 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.circle-1 {
+    width: 100%;
+    height: 100%;
+    animation-delay: 0s;
+}
+
+.circle-2 {
+    width: 70%;
+    height: 70%;
+    animation-delay: 1s;
+}
+
+.circle-3 {
+    width: 40%;
+    height: 40%;
+    animation-delay: 2s;
+}
+
+@keyframes pulse-ring {
     0% {
-        transform: translate(-50%, -50%) scale(0.5);
+        transform: scale(0.95);
         opacity: 0;
     }
 
-    20% {
+    50% {
         opacity: 0.5;
     }
 
     100% {
-        transform: translate(-50%, -50%) scale(2.5);
+        transform: scale(1.1);
         opacity: 0;
     }
 }
 
-/* ── Rotating Scanner ── */
-.scanner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 150%;
-    height: 150%;
-    background: conic-gradient(from 0deg, rgba(82, 114, 255, 0.1) 0deg, transparent 90deg);
-    transform-origin: 50% 50%;
-    animation: scan 4s linear infinite;
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-@keyframes scan {
-    from {
-        transform: translate(-50%, -50%) rotate(0deg);
-    }
-
-    to {
-        transform: translate(-50%, -50%) rotate(360deg);
-    }
-}
-
-/* ── Peer Nodes ── */
-.peer {
-    animation: peer-reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-@keyframes peer-reveal {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.6);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-}
-
-.peer:hover {
-    transform: translate(-50%, -50%) scale(1.1) !important;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+.me-center {
+    position: relative;
     z-index: 10;
+    width: 100px;
+    height: 100px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ── Device Area Responsive ── */
-.device-area {
-    width: min(72vw, 380px);
-    height: min(72vw, 380px);
+.me-center::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    opacity: 0.3;
 }
 
-@media (max-width: 480px) {
-    .device-area {
-        width: min(75vw, 280px);
-        height: min(75vw, 280px);
+.me-center:hover {
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.me-icon {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+}
+
+.me-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Peer Nodes */
+.peer-node {
+    position: absolute;
+    width: 84px;
+    height: 84px;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    z-index: 20;
+}
+
+.peer-node:hover {
+    background: var(--surface-light);
+    border-color: var(--accent);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.peer-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 6px;
+    max-width: 70px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+}
+
+/* Shared Bar */
+.shared-bar {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: var(--glass);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.75rem;
+    border-radius: var(--radius-full);
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    z-index: 1000;
+    max-width: 90vw;
+    overflow-x: auto;
+    scrollbar-width: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shared-bar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Upload Drop Area */
+.drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    margin-bottom: 2rem;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(37, 99, 235, 0.03);
+}
+
+.drop-zone svg {
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+}
+
+/* Progress bar inside transfer card */
+.progress-container {
+    margin: 2rem 0;
+}
+
+.progress-track {
+    height: 6px;
+    background: var(--surface-light);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Upload Action FAB */
+.action-fab {
+    position: fixed;
+    bottom: 2.5rem;
+    right: 2.5rem;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.75rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 12px 40px var(--accent-glow);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-fab:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 50px var(--accent-glow);
+    background: #3b82f6;
+}
+
+.action-fab svg {
+    transition: transform 0.4s ease;
+}
+
+.action-fab:hover svg {
+    transform: rotate(90deg);
+}
+
+@media (max-width: 640px) {
+    .action-fab {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 1.25rem;
     }
-}
 
-.me-node {
-    width: clamp(68px, 18vw, 100px);
-    height: clamp(68px, 18vw, 100px);
+    .action-fab span {
+        display: none;
+    }
 }

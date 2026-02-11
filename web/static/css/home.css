@@ -1,27 +1,69 @@
-/* ═══════════════════════════════════════════════
-   GoShare — Homepage Styles
-   Hero typography and complex layout tweaks
-   ═══════════════════════════════════════════════ */
+/* Page specific styles for Home */
 
-/* ── Hero Typography ── */
-.hero-text {
-    letter-spacing: -0.05em;
+.hero-section {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
-/* ── Grid Container override (Home specific tuning) ── */
-.grid-container {
-    background-image:
-        radial-gradient(circle at 50% 50%,
-            rgba(129, 140, 248, 0.03) 0%,
-            transparent 50%),
-        linear-gradient(to right,
-            rgba(255, 255, 255, 0.005) 1px,
-            transparent 1px),
-        linear-gradient(to bottom,
-            rgba(255, 255, 255, 0.005) 1px,
-            transparent 1px);
-    background-size:
-        100% 100%,
-        60px 60px,
-        60px 60px;
+.hero-title {
+    font-size: clamp(3rem, 10vw, 6rem);
+    font-weight: 700;
+    line-height: 0.95;
+    margin-bottom: 2rem;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 500px;
+    margin-bottom: 3rem;
+    font-weight: 400;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 4rem;
+    border-top: 1px solid var(--border);
+    padding-top: 4rem;
+}
+
+.feature-card {
+    padding: 2rem;
+    text-align: left;
+}
+
+.feature-num {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.2em;
+}
+
+.feature-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.feature-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+    }
 }

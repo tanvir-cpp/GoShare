@@ -4,355 +4,266 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-  <title>GoShare — Send Anywhere</title>
+  <title>Global Sharing — GoShare</title>
   <meta name="description" content="Send files to anyone across the world with an encrypted link" />
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            bg: "#0d0d12",
-            card: "#18181b",
-            "card-hover": "#252529",
-            border: "rgba(255, 255, 255, 0.04)",
-            accent: "#818cf8",
-            "accent-soft": "rgba(129, 140, 248, 0.05)",
-            success: "#34d399",
-            danger: "#f87171",
-            muted: "#71717a",
-          },
-          borderRadius: {
-            soft: "1rem",
-            "soft-lg": "1.5rem",
-          },
-        },
-      },
-    };
-  </script>
   <link rel="stylesheet" href="/static/css/shared.css" />
   <link rel="stylesheet" href="/static/css/p2p.css" />
 </head>
 
-<body class="bg-bg grid-bg min-h-screen w-screen text-white flex flex-col items-center select-none overflow-x-hidden">
-  <!-- ═══ NAVBAR ═══ -->
-  <nav class="fixed top-0 left-0 right-0 z-[200] nav-blur border-b border-white/[0.05]">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <!-- Left: Logo -->
-      <a href="/" class="flex items-center gap-2 group transition-opacity hover:opacity-80">
+<body>
+  <div class="grain-overlay"></div>
+  <div class="ambient-light"></div>
+
+  <!-- Navbar -->
+  <nav class="nav-container">
+    <a href="/" class="logo-link">
+      <span>GoShare</span>
+    </a>
+
+    <div class="nav-switcher">
+      <a href="/pages/lan.html">Nearby</a>
+      <a href="/pages/p2p.html" class="active">Global</a>
+    </div>
+
+    <button onclick="changeName()"
+      style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem; background: transparent; padding: 4px 8px; border-radius: var(--radius-md); transition: background 0.2s;"
+      class="hover:bg-white/5">
+      <div class="text-right hidden-sm">
+        <div id="navUserName" style="font-size: 0.85rem; font-weight: 600; color: #fff;">...</div>
         <div
-          class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          style="font-size: 0.7rem; color: var(--success); font-weight: 500; display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem;">
+          Connected
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="10" />
           </svg>
         </div>
-        <span class="font-bold text-lg tracking-tight text-white hidden xs:block">GoShare</span>
-      </a>
-
-      <!-- Center: Switcher -->
-      <div class="flex items-center bg-white/[0.03] border border-white/[0.08] p-1 rounded-full backdrop-blur-md">
-        <a href="/pages/lan.html"
-          class="px-4 sm:px-6 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all text-zinc-400 hover:text-white">Nearby</a>
-        <a href="/pages/p2p.html"
-          class="px-4 sm:px-6 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all bg-white text-black shadow-lg">Global</a>
       </div>
-
-      <!-- Right: User & Status -->
-      <div class="flex items-center gap-3">
-        <button onclick="changeName()"
-          class="group flex items-center gap-2 px-2 py-1 rounded-full hover:bg-white/[0.05] transition-all">
-          <div id="navUserIcon"
-            class="w-7 h-7 bg-zinc-800 rounded-full border border-white/10 flex items-center justify-center text-[10px]">
-            <!-- Icon will be set by JS -->
-          </div>
-          <div class="hidden sm:flex flex-col items-start leading-none">
-            <span id="navUserName" class="text-[11px] font-bold text-white">...</span>
-            <div class="flex items-center gap-1">
-              <div class="status-dot text-success bg-success"></div>
-              <span class="text-[9px] text-zinc-500 font-medium">Online</span>
-            </div>
-          </div>
-        </button>
+      <div style="position: relative;">
+        <div id="navUserIcon"
+          style="width: 36px; height: 36px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+        </div>
+        <div
+          style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: #222; border: 1.5px solid var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-muted); box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12.22 2h-.44a2 2 0 0 0-2 2a2.01 2.01 0 0 1-2 2a2 2 0 0 0-2 2a2.01 2.01 0 0 1-2 2a2.01 2.01 0 0 1-2 2a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2a2.01 2.01 0 0 1 2 2a2 2 0 0 0 2 2a2.01 2.01 0 0 1 2 2a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2a2.01 2.01 0 0 1 2-2a2 2 0 0 0 2-2a2.01 2.01 0 0 1 2-2a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2a2.01 2.01 0 0 1-2-2a2 2 0 0 0-2-2a2.01 2.01 0 0 1-2-2a2 2 0 0 0-2-2z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </div>
       </div>
-    </div>
+    </button>
   </nav>
 
+  <!-- Main Content -->
+  <main class="content-section app-entrance" style="text-align: center; max-width: 600px;">
 
-  <main
-    class="app-entrance flex-1 flex flex-col items-center justify-center w-full max-w-3xl px-4 sm:px-6 content-safe-top pb-8 sm:pb-14">
-    <!-- SENDER VIEW (default) -->
-    <div id="senderView" class="w-full">
-      <div class="text-center mb-8 sm:mb-10">
+    <!-- SENDER VIEW -->
+    <div id="senderView">
+      <header style="margin-bottom: 3rem;">
         <div
-          class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-glass rounded-full text-xs sm:text-sm font-medium text-zinc-400 mb-6 sm:mb-8">
-          <span>Your name:</span>
-          <span id="userNameDisplay" class="text-white">Anonymous</span>
+          style="display: inline-block; padding: 0.4rem 1rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1.5rem;">
+          Sharing as <span id="userNameDisplay" style="color: #fff; font-weight: 600;">...</span>
         </div>
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tighter mb-2 text-white">
-          Send Anywhere
-        </h1>
-        <p class="text-zinc-500 text-sm sm:text-base font-medium">
-          Share files with anyone, anywhere in the world
-        </p>
-      </div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Share Everywhere</h1>
+        <p class="text-muted" style="font-weight: 400;">Send files to anyone in the world with a secure link</p>
+      </header>
 
-      <!-- File Select Area -->
-      <div id="fileSelectArea"
-        class="file-select-area max-w-md mx-auto bg-white/[0.02] border border-dashed border-glass-light rounded-2xl p-6 sm:p-12 text-center cursor-pointer hover:bg-white/[0.04] transition-colors flex flex-col items-center justify-center group"
-        onclick="document.getElementById('fileInput').click()">
-        <div
-          class="w-10 h-10 sm:w-12 sm:h-12 mb-4 bg-white/[0.03] border border-glass rounded-xl flex items-center justify-center text-zinc-400 group-hover:scale-110 transition-transform">
-          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
-          </svg>
-        </div>
-        <span class="text-sm font-medium text-white/60">Drop files here or tap to browse</span>
-      </div>
-      <input type="file" id="fileInput" multiple class="hidden" />
+      <div class="drop-zone" id="fileSelectArea" onclick="document.getElementById('fileInput').click()">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+          style="margin-bottom: 1rem;">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+        </svg>
+        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">Choose Files</div>
+        <p class="text-dim" style="font-size: 0.85rem;">Drag and drop files here to start</p>
+        </header>
+        <input type="file" id="fileInput" multiple style="display: none;" />
 
-      <div id="selectedFile" class="hidden max-w-md mx-auto mt-8">
-        <div id="fileList" class="space-y-2 mb-6 max-h-48 overflow-y-auto scrollbar-hide"></div>
-        <button id="shareBtn" onclick="createRoom()"
-          class="w-full py-3.5 bg-white text-black rounded-full text-sm font-semibold transition-opacity hover:opacity-90 active:scale-95">
-          Create share link
-        </button>
-      </div>
-
-      <!-- Share Link + QR -->
-      <div id="shareInfo" class="hidden max-w-md mx-auto mt-8">
-        <div class="bg-card border border-white/[0.05] rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center shadow-2xl">
-          <p class="text-zinc-500 text-xs sm:text-sm font-medium mb-5 sm:mb-6">
-            Share this link with the recipient
-          </p>
-          <div id="qrcode" class="flex justify-center mb-6 sm:mb-8 p-4 sm:p-6 bg-white rounded-xl overflow-hidden">
+        <div id="selectedFile" class="hidden" style="margin-top: 2rem;">
+          <div id="fileList"
+            style="margin-bottom: 2rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); padding: 1rem; max-height: 200px; overflow-y: auto;">
           </div>
+          <button id="shareBtn" onclick="createRoom()" class="btn-primary"
+            style="width: 100%; justify-content: center;">Create Secure Link</button>
+        </div>
+
+        <!-- Share Info -->
+        <div id="shareInfo" class="hidden" style="margin-top: 2rem;">
           <div
-            class="flex items-center gap-2 bg-white/[0.02] border border-white/[0.05] rounded-full pl-4 sm:pl-5 pr-2 py-2">
-            <span class="flex-1 text-xs sm:text-sm truncate text-zinc-400 font-mono" id="shareUrl"></span>
-            <button onclick="copyLink()"
-              class="flex-shrink-0 px-4 py-2 bg-white text-black rounded-full text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity active:scale-95">
-              Copy link
-            </button>
-          </div>
-          <div id="waitingStatus"
-            class="mt-8 flex items-center justify-center gap-2 text-zinc-500 text-xs sm:text-sm font-medium">
-            <div class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-            Waiting for someone to join...
+            style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow-lg);">
+            <div id="qrcode"
+              style="background: #fff; padding: 1.5rem; border-radius: var(--radius-md); display: inline-block; margin-bottom: 2rem;">
+            </div>
+
+            <div
+              style="display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 4px 4px 4px 1.25rem; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+              <span id="shareUrl" class="text-muted"
+                style="font-family: monospace; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">Loading...</span>
+              <button onclick="copyLink()" class="btn-primary"
+                style="padding: 0.5rem 1.25rem; font-size: 0.8rem;">Copy</button>
+            </div>
+
+            <div id="waitingStatus"
+              style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
+              <div
+                style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite;">
+              </div>
+              Waiting for recipient...
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Transfer Overlay -->
-      <div id="transferOverlay"
-        class="fixed inset-0 bg-bg/95 backdrop-blur-3xl z-[1000] items-center justify-center p-5 sm:p-6 text-white text-center"
-        style="display: none">
-        <div class="w-full max-w-sm scale-95 opacity-0 transition-all duration-300" id="transferCard">
-
-          <!-- Icon -->
-          <div class="flex justify-center mb-6">
-            <div id="transferIcon"
-              class="w-16 h-16 sm:w-20 sm:h-20 bg-white/[0.03] border border-white/[0.05] rounded-2xl flex items-center justify-center transition-all duration-300">
-              <svg class="w-7 h-7 sm:w-8 sm:h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- File name + stage -->
-          <div class="text-center mb-8">
-            <h2 id="transferName" class="text-base sm:text-lg font-semibold tracking-tight truncate mb-1">Sending...
-            </h2>
-            <p id="transferStage" class="text-xs sm:text-sm text-zinc-500 font-medium">Getting ready...</p>
-          </div>
-
-          <!-- Progress bar -->
-          <div class="mb-3">
-            <div class="flex items-center justify-between mb-2">
-              <span id="uiPercent" class="text-xl sm:text-2xl font-bold font-mono tabular-nums">0%</span>
-              <span id="uiEta" class="text-sm sm:text-base text-zinc-400 font-mono tabular-nums">--:--</span>
-            </div>
-            <div class="relative w-full h-2.5 sm:h-3 bg-white/[0.06] rounded-full overflow-hidden">
-              <div id="transferBar"
-                class="absolute inset-y-0 left-0 bg-accent rounded-full transition-all duration-300 progress-glow"
-                style="width: 0%"></div>
-            </div>
-          </div>
-
-          <!-- Speed -->
-          <div class="flex items-center justify-between mb-8 sm:mb-10">
-            <div class="flex items-center gap-2">
-              <svg class="w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
-              </svg>
-              <span id="uiSpeed" class="text-sm text-zinc-400 font-mono tabular-nums">0 MB/s</span>
-            </div>
-            <span class="text-xs text-zinc-600 font-medium">Time remaining</span>
-          </div>
-
-          <button id="abortBtn" onclick="abortTransfer()"
-            class="w-full py-3.5 border border-white/[0.08] text-sm font-medium hover:bg-danger/20 hover:border-danger/30 hover:text-danger transition-colors rounded-full active:scale-95">
-            Cancel
-          </button>
-
-          <button id="successCloseBtn" onclick="closeTransferOverlay()"
-            class="hidden w-full py-3.5 mt-3 bg-white text-black text-sm font-semibold rounded-full transition-all active:scale-95">
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- RECEIVER VIEW -->
-    <div id="receiverView" class="hidden w-full">
-      <div class="text-center mb-8 sm:mb-12">
-        <div
-          class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border-glass rounded-full text-xs sm:text-sm font-medium text-zinc-400 mb-4 sm:mb-6">
-          <span>From:</span>
-          <span id="remoteUserName" class="text-white">Someone</span>
-        </div>
-        <h1 class="text-2xl sm:text-4xl font-semibold tracking-tighter mb-2 text-white">
-          Receiving Files
-        </h1>
-        <p class="text-zinc-500 text-sm sm:text-base font-medium">
-          Your connection is encrypted end-to-end
-        </p>
-      </div>
-
-      <div class="max-w-md mx-auto">
-        <!-- Default: Listening -->
-        <div id="recvDefault" class="bg-card border-glass rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center shadow-2xl">
+      <!-- RECEIVER VIEW -->
+      <div id="receiverView" class="hidden">
+        <header style="margin-bottom: 3rem;">
           <div
-            class="w-14 h-14 mx-auto mb-5 bg-white/[0.03] border-glass rounded-xl flex items-center justify-center text-zinc-400">
-            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            style="display: inline-block; padding: 0.4rem 1rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1.5rem;">
+            From: <span id="remoteUserName" style="color: #fff; font-weight: 600;">Someone</span>
+          </div>
+          <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Secure Transfer</h1>
+          <p class="text-muted" style="font-weight: 400;">Encrypted direct connection established</p>
+        </header>
+
+        <div id="recvDefault"
+          style="background: var(--surface); border: 1px solid var(--border); padding: 2.5rem; border-radius: var(--radius-lg); text-align: center;">
+          <div style="color: var(--accent); margin-bottom: 1.25rem;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-white/90 mb-2" id="receiverFilesText">
-            Ready to receive
-          </p>
+          <p id="receiverFilesText" style="font-weight: 600; margin-bottom: 0.75rem; font-size: 1.1rem;">Files ready to
+            download</p>
           <div id="receiverStatus"
-            class="flex items-center justify-center gap-2 text-zinc-500 text-xs sm:text-sm font-medium">
-            <div class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-            Connected and waiting
+            style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--success);">
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+            Stable Connection
           </div>
         </div>
 
-        <!-- Connecting state -->
-        <div id="recvConnecting"
-          class="hidden bg-card border-glass rounded-xl sm:rounded-2xl p-6 sm:p-8 text-center shadow-2xl">
-          <div
-            class="w-14 h-14 mx-auto mb-5 bg-accent/10 rounded-xl flex items-center justify-center text-accent animate-pulse">
-            <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-            </svg>
-          </div>
-          <h2 class="font-bold text-base sm:text-lg mb-1.5">Connecting...</h2>
-          <p class="text-zinc-500 text-xs sm:text-sm font-medium">
-            Setting up a direct connection
-          </p>
+        <div id="recvConnecting" class="hidden" style="padding: 4rem 2rem;">
+          <div style="font-size: 2rem; animation: pulse 1s infinite;">⚡</div>
+          <p class="text-muted" style="margin-top: 1rem;">Connecting to sender...</p>
         </div>
 
-        <!-- Error -->
-        <div id="recvError" class="hidden bg-card border border-danger/30 rounded-xl p-6 sm:p-8 text-center">
-          <div class="w-12 h-12 mx-auto mb-3 text-danger">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-          </div>
-          <h2 class="text-lg font-bold mb-1">Couldn't connect</h2>
-          <p class="text-zinc-400 text-sm" id="recvErrorMsg">
-            The link may have expired. Ask the sender for a new one.
-          </p>
-          <a href="/pages/p2p.html" class="inline-block mt-4 text-accent hover:underline text-sm font-semibold">
-            Go back
-          </a>
+        <div id="recvError" class="hidden"
+          style="background: rgba(239, 68, 68, 0.05); border: 1px solid var(--danger); padding: 3rem; border-radius: var(--radius-lg);">
+          <h3 style="color: var(--danger); margin-bottom: 1rem;">Connection Failed</h3>
+          <p id="recvErrorMsg" class="text-muted" style="font-size: 0.9rem;">The link might be invalid or expired.</p>
+          <a href="/pages/p2p.html" class="btn-primary"
+            style="margin-top: 2rem; background: var(--danger); color: #fff;">Try Again</a>
         </div>
       </div>
-    </div>
   </main>
 
-  <!-- Transfer Request Modal -->
-  <div id="requestModal"
-    class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[500] hidden flex items-center justify-center p-4 sm:p-6">
-    <div
-      class="bg-card border-glass rounded-2xl p-6 sm:p-8 w-full max-w-sm shadow-2xl scale-95 transition-transform duration-300">
-      <div class="w-14 h-14 bg-accent/10 rounded-xl flex items-center justify-center mx-auto mb-5">
-        <svg class="w-7 h-7 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-        </svg>
+  <!-- Transfer Overlay (Common) -->
+  <div class="modal-overlay" id="transferOverlay" style="background: var(--bg);">
+    <div class="modal-content" style="border: none; background: transparent; box-shadow: none;">
+      <div id="transferCard">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2 id="transferName"
+            style="font-size: 1.25rem; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis;">Synchronizing...
+          </h2>
+          <p id="transferStage" class="text-muted" style="font-size: 0.9rem;">Connecting...</p>
+        </div>
+
+        <div class="progress-container">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <span id="uiPercent" style="font-size: 2rem; font-weight: 700; font-family: 'Outfit';">0%</span>
+            <span id="uiEta" class="text-muted" style="font-size: 0.85rem; font-family: monospace;">--:--</span>
+          </div>
+          <div class="progress-track">
+            <div id="transferBar" class="progress-fill"></div>
+          </div>
+          <div style="margin-top: 1rem; display: flex; justify-content: space-between;">
+            <span id="uiSpeed" class="text-dim" style="font-size: 0.75rem; font-family: monospace;">0 MB/s</span>
+            <span class="text-dim" style="font-size: 0.75rem;">End-to-End Encrypted</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 4rem;">
+          <button id="abortBtn" onclick="abortTransfer()" class="text-dim hover:text-danger"
+            style="background: transparent; width: 100%; font-weight: 500;">Cancel</button>
+          <button id="successCloseBtn" onclick="closeTransferOverlay()" class="btn-primary hidden"
+            style="width: 100%; justify-content: center;">Transfer Complete</button>
+        </div>
       </div>
-      <h3 class="text-lg font-bold text-center mb-1.5">Someone is sending you files</h3>
-      <p class="text-zinc-400 text-center text-sm mb-5" id="requestInfo">
-        Waiting for details...
-      </p>
-      <div class="flex gap-3">
+    </div>
+  </div>
+
+  <!-- Incoming Request Modal -->
+  <div class="modal-overlay" id="requestModal">
+    <div class="modal-content" style="text-align: center;">
+      <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Incoming Files</h3>
+      <p id="requestInfo" class="text-muted" style="font-size: 0.85rem; margin-bottom: 2rem;">Someone wants to share
+        files with you.</p>
+
+      <div style="display: flex; gap: 1rem;">
         <button onclick="respondToTransfer(false)"
-          class="flex-1 py-3 px-4 rounded-xl border border-border font-medium text-sm hover:bg-white/5 transition active:scale-95">
-          Decline
-        </button>
-        <button onclick="respondToTransfer(true)"
-          class="flex-1 py-3 px-4 rounded-xl bg-accent text-white font-semibold text-sm hover:bg-accent/80 transition active:scale-95">
-          Accept
-        </button>
+          style="flex: 1; background: transparent; color: var(--text-dim);">Decline</button>
+        <button onclick="respondToTransfer(true)" class="btn-primary"
+          style="flex: 2; justify-content: center;">Accept</button>
       </div>
     </div>
   </div>
 
-  <!-- Name Modal -->
-  <div id="nameModal"
-    class="modal-overlay fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] items-center justify-center p-4 sm:p-6">
-    <div
-      class="modal-content bg-card border-glass rounded-2xl p-6 sm:p-8 w-full max-w-sm shadow-2xl transition-all duration-300"
-      id="nameModalCard">
-      <h3 class="text-lg sm:text-xl font-semibold tracking-tight text-white mb-1.5">
-        Your name
-      </h3>
-      <p class="text-zinc-500 text-sm font-medium mb-6 sm:mb-8">
-        This is how others see you when sharing
-      </p>
+  <!-- Identity Modal -->
+  <div class="modal-overlay" id="nameModal">
+    <div class="modal-content">
+      <h2 style="margin-bottom: 0.5rem; font-size: 1.25rem;">Set Display Name</h2>
+      <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 1.5rem;">Choose how you appear to others</p>
 
-      <div class="relative mb-6 sm:mb-8">
-        <input type="text" id="newNameInput"
-          class="w-full bg-white/[0.02] border border-white/[0.05] rounded-full px-5 py-3.5 outline-none focus:border-white transition-colors text-white text-base"
-          placeholder="Enter your name" maxlength="20" />
-      </div>
+      <input type="text" id="newNameInput" maxlength="20" placeholder="Enter name..."
+        style="width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 1rem 1.5rem; border-radius: var(--radius-md); color: #fff; margin-bottom: 2rem; outline: none; font-size: 1rem;">
 
-      <div class="flex gap-3">
+      <div style="display: flex; gap: 0.75rem;">
         <button onclick="closeNameModal()"
-          class="flex-1 py-3 font-medium text-sm text-zinc-500 hover:text-white transition">
-          Cancel
-        </button>
-        <button onclick="saveNameFromModal()"
-          class="flex-1 py-3 rounded-full bg-white text-black font-semibold text-sm hover:opacity-90 transition active:scale-95">
-          Save
-        </button>
+          style="flex: 1; background: transparent; color: var(--text-dim); font-size: 0.85rem;">Cancel</button>
+        <button onclick="saveNameFromModal()" class="btn-primary" style="flex: 2; justify-content: center;">Save
+          Name</button>
       </div>
     </div>
   </div>
 
-  <footer
-    class="py-5 border-t border-white/[0.04] w-full max-w-3xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-    <div class="flex items-center gap-2">
-      <div class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-      <span class="text-zinc-500 text-xs sm:text-sm font-medium">Encrypted connection active</span>
+  <footer style="margin-top: 8rem; border-top: 1px solid var(--border); padding: 4rem 1.5rem; text-align: center;">
+    <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem;">
+      <span class="text-dim" style="font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;">Built with Go
+        &
+        WebRTC</span>
     </div>
-    <p class="text-zinc-600 text-xs sm:text-sm font-medium">GoShare</p>
+    <div
+      style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 2rem;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+      End-to-End Encrypted Tunnel Active
+    </div>
+    <div class="text-dim" style="font-size: 0.8rem;">
+      &copy; 2026 GoShare. All rights reserved.
+    </div>
   </footer>
 
-  <div id="toastEl"
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-white/[0.08] text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50">
-    Copied!
+  <div id="toast"
+    style="position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 4000; background: var(--accent); color: #fff; padding: 0.5rem 1.5rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 500; opacity: 0; transition: all 0.3s ease;">
+    Copied to clipboard
   </div>
 
+  <style>
+    @media (max-width: 600px) {
+      .hidden-sm {
+        display: none;
+      }
+
+      .xs-show {
+        display: block !important;
+      }
+    }
+  </style>
+
+  <script src="/static/js/shared.js"></script>
   <script src="/static/js/p2p.js"></script>
 </body>
 
