@@ -43,7 +43,7 @@ EXPOSE 8080
 
 # Basic health check to ensure the API is responsive
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/info || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/api/info || exit 1
 
 # Switch to the non-root user
 USER appuser
