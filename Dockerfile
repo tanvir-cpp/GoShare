@@ -10,4 +10,4 @@ WORKDIR /app
 COPY --from=builder /app/goshare .
 COPY --from=builder /app/web ./web
 EXPOSE 8080
-CMD ["./goshare", "-p", "8080"]
+CMD ["./goshare"]

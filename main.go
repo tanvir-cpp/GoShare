@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"fileshare/pkg/discovery"
@@ -15,9 +16,16 @@ import (
 )
 
 func main() {
-	port := flag.Int("p", 8080, "Port number")
+	portFlag := flag.Int("p", 8080, "Port number")
 	sharedDir := flag.String("d", "shared_files", "Shared directory")
 	flag.Parse()
+
+	port := *portFlag
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		if p, err := strconv.Atoi(envPort); err == nil {
+			port = p
+		}
+	}
 
 	handlers.SharedDir = *sharedDir
 	os.MkdirAll(*sharedDir, 0755)
@@ -63,7 +71,7 @@ func main() {
 	go discovery.CleanupStale()
 
 	ip := network.GetLocalIP()
-	currentPort := *port
+	currentPort := port
 
 	for {
 		addr := fmt.Sprintf("0.0.0.0:%d", currentPort)
