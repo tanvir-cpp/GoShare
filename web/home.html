@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,9 +12,11 @@
         extend: {
           colors: {
             bg: '#09090b',
-            surface: '#18181b',
-            border: '#27272a',
+            surface: '#121214',
+            border: '#1f1f22',
             subtle: '#3f3f46',
+            lan: '#fbbf24',
+            p2p: '#a78bfa',
           }
         }
       }
@@ -21,9 +24,13 @@
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    body { font-family: 'Inter', system-ui, sans-serif; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
   </style>
 </head>
+
 <body class="bg-bg min-h-screen text-white">
 
   <!-- Navbar -->
@@ -33,8 +40,12 @@
       <div class="flex items-center gap-5">
         <a href="/lan.html" class="text-zinc-400 hover:text-white text-xs transition">LAN</a>
         <a href="/p2p.html" class="text-zinc-400 hover:text-white text-xs transition">P2P</a>
-        <a href="https://github.com/tanvir-cpp/GoShare" target="_blank" class="text-zinc-500 hover:text-zinc-300 transition">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z"/></svg>
+        <a href="https://github.com/tanvir-cpp/GoShare" target="_blank"
+          class="text-zinc-500 hover:text-zinc-300 transition">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z" />
+          </svg>
         </a>
       </div>
     </div>
@@ -42,21 +53,26 @@
 
   <!-- Hero -->
   <section class="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border text-xs text-zinc-400 mb-6">
+    <div
+      class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border text-xs text-zinc-400 mb-6">
       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
       Open source &middot; No sign-up required
     </div>
     <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-4">
-      Share files between<br>devices, <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-violet-500">instantly</span>
+      Share files between<br>devices, <span
+        class="text-transparent bg-clip-text bg-gradient-to-r from-lan to-p2p">instantly</span>
     </h1>
     <p class="text-zinc-400 text-base sm:text-lg max-w-lg mx-auto mb-10 leading-relaxed">
-      Drop files to nearby devices on your LAN or send them anywhere with a link. No accounts, no cloud storage, no limits.
+      Drop files to nearby devices on your LAN or send them anywhere with a link. No accounts, no cloud storage, no
+      limits.
     </p>
     <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-      <a href="/lan.html" class="w-full sm:w-auto px-6 py-2.5 bg-white text-black text-sm font-semibold rounded-lg hover:bg-zinc-200 transition">
+      <a href="/lan.html"
+        class="w-full sm:w-auto px-6 py-2.5 bg-white text-black text-sm font-semibold rounded-lg hover:bg-zinc-200 transition">
         LAN Share
       </a>
-      <a href="/p2p.html" class="w-full sm:w-auto px-6 py-2.5 bg-surface border border-border text-sm font-semibold rounded-lg hover:bg-zinc-800 transition">
+      <a href="/p2p.html"
+        class="w-full sm:w-auto px-6 py-2.5 bg-surface border border-border text-sm font-semibold rounded-lg hover:bg-zinc-800 transition">
         P2P Share
       </a>
     </div>
@@ -65,26 +81,39 @@
   <!-- Feature cards -->
   <section class="max-w-5xl mx-auto px-6 pb-20">
     <div class="grid sm:grid-cols-3 gap-4">
-      <div class="bg-surface border border-border rounded-xl p-5">
-        <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3">
-          <svg class="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z"/></svg>
+      <div class="bg-surface border border-border rounded-xl p-5 hover:border-lan/50 transition-colors">
+        <div class="w-8 h-8 rounded-lg bg-lan/10 flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-lan" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+          </svg>
         </div>
         <h3 class="font-semibold text-sm mb-1">LAN Discovery</h3>
-        <p class="text-zinc-500 text-xs leading-relaxed">Auto-detect devices on your local network. Drag and drop to send files — zero config.</p>
+        <p class="text-zinc-500 text-xs leading-relaxed">Auto-detect devices on your local network. Drag and drop to
+          send files — zero config.</p>
       </div>
-      <div class="bg-surface border border-border rounded-xl p-5">
-        <div class="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3">
-          <svg class="w-4 h-4 text-violet-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/></svg>
+      <div class="bg-surface border border-border rounded-xl p-5 hover:border-p2p/50 transition-colors">
+        <div class="w-8 h-8 rounded-lg bg-p2p/10 flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-p2p" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+          </svg>
         </div>
         <h3 class="font-semibold text-sm mb-1">P2P Transfer</h3>
-        <p class="text-zinc-500 text-xs leading-relaxed">Share via link or QR code. Files transfer directly between browsers using WebRTC.</p>
+        <p class="text-zinc-500 text-xs leading-relaxed">Share via link or QR code. Files transfer directly between
+          browsers using WebRTC.</p>
       </div>
       <div class="bg-surface border border-border rounded-xl p-5">
         <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3">
-          <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+          <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
         </div>
         <h3 class="font-semibold text-sm mb-1">Private & Encrypted</h3>
-        <p class="text-zinc-500 text-xs leading-relaxed">Files never touch a cloud server. LAN stays local, P2P uses encrypted WebRTC channels.</p>
+        <p class="text-zinc-500 text-xs leading-relaxed">Files never touch a cloud server. LAN stays local, P2P uses
+          encrypted WebRTC channels.</p>
       </div>
     </div>
   </section>
@@ -121,4 +150,5 @@
   </footer>
 
 </body>
+
 </html>

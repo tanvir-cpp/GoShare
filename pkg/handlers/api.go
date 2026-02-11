@@ -29,7 +29,10 @@ func Cors(h http.HandlerFunc) http.HandlerFunc {
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Registering request from %s", r.RemoteAddr)
-	var body struct{ ID string }
+	var body struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		log.Printf("Register error: %v", err)
 		http.Error(w, "invalid json", 400)
@@ -42,25 +45,39 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	discovery.Lock.Lock()
-	defer discovery.Lock.Unlock()
-	if _, ok := discovery.Devices[id]; !ok {
-		discovery.Devices[id] = &discovery.Device{
+	dev, ok := discovery.Devices[id]
+	if !ok {
+		dev = &discovery.Device{
 			ID:       id,
-			Name:     discovery.MakeDeviceName(id),
+			Name:     body.Name,
 			Icon:     discovery.MakeDeviceIcon(id),
 			Type:     discovery.DetectType(r.UserAgent()),
 			IP:       r.RemoteAddr,
 			UA:       r.UserAgent(),
 			LastSeen: time.Now(),
 		}
-		log.Printf("Device Registered: %s (%s) from %s", discovery.Devices[id].Name, id, r.RemoteAddr)
+		if dev.Name == "" {
+			dev.Name = discovery.MakeDeviceName(id)
+		}
+		discovery.Devices[id] = dev
+		log.Printf("Device Registered: %s (%s) from %s", dev.Name, id, r.RemoteAddr)
 	} else {
-		discovery.Devices[id].LastSeen = time.Now()
-		discovery.Devices[id].IP = r.RemoteAddr
+		// If name provided as custom, update it
+		if body.Name != "" && body.Name != dev.Name {
+			dev.Name = body.Name
+			log.Printf("Device Name Updated: %s (%s)", dev.Name, id)
+			// Unlock before broadcast to avoid deadlock if broadcast needs lock (though it uses RLock)
+			discovery.Lock.Unlock()
+			discovery.Broadcast("device-joined", dev, id)
+			discovery.Lock.Lock()
+		}
+		dev.LastSeen = time.Now()
+		dev.IP = r.RemoteAddr
 	}
+	discovery.Lock.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(discovery.Devices[id])
+	json.NewEncoder(w).Encode(dev)
 }
 
 func HandleEvents(w http.ResponseWriter, r *http.Request) {
@@ -209,13 +226,11 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		sender := discovery.Devices[fromID]
 		discovery.Lock.RUnlock()
 		if sender != nil {
-			for _, name := range saved {
-				discovery.Notify(toID, "file-sent", map[string]interface{}{
-					"filename":  name,
-					"from_name": sender.Name,
-					"from_icon": sender.Icon,
-				})
-			}
+			discovery.Notify(toID, "files-sent", map[string]interface{}{
+				"filenames": saved,
+				"from_name": sender.Name,
+				"from_icon": sender.Icon,
+			})
 		}
 	} else {
 		discovery.Broadcast("shared-update", nil, "")

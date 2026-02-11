@@ -11,10 +11,11 @@ let pc = null;
 let dataChannel = null;
 let roomId = null;
 let role = null; // "sender" or "receiver"
-let selectedFile = null;
+let selectedFiles = [];
 let pollTimer = null;
 let pollIndex = 0;
 let pendingCandidates = [];
+let transferAccepted = false;
 
 // ─── Init ───
 (function init() {
@@ -31,8 +32,47 @@ let pendingCandidates = [];
     // Sender mode
     role = "sender";
     setupFileInput();
+    updateIdentity();
   }
 })();
+
+function updateIdentity() {
+  const name = localStorage.getItem("user_name") || "Anonymous";
+  const el = document.getElementById("userNameDisplay");
+  if (el) el.textContent = name;
+}
+
+async function changeName() {
+  const currentName = localStorage.getItem("user_name") || "Anonymous";
+  const modal = document.getElementById("nameModal");
+  const input = document.getElementById("newNameInput");
+
+  input.value = currentName === "Anonymous" ? "" : currentName;
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    document.getElementById("nameModalCard").classList.remove("scale-95", "opacity-0");
+    input.focus();
+  }, 10);
+}
+
+function closeNameModal() {
+  const modal = document.getElementById("nameModal");
+  document.getElementById("nameModalCard").classList.add("scale-95", "opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 300);
+}
+
+async function saveNameFromModal() {
+  const input = document.getElementById("newNameInput");
+  const newName = input.value.trim();
+  const currentName = localStorage.getItem("user_name") || "Anonymous";
+
+  if (newName && newName !== currentName) {
+    localStorage.setItem("user_name", newName);
+    updateIdentity();
+    showToast("Name updated!");
+  }
+  closeNameModal();
+}
 
 // ─── Sender: File Selection ───
 function setupFileInput() {
@@ -41,7 +81,7 @@ function setupFileInput() {
 
   fileInput.addEventListener("change", () => {
     if (fileInput.files.length) {
-      selectedFile = fileInput.files[0];
+      selectedFiles = Array.from(fileInput.files);
       showSelectedFile();
     }
   });
@@ -75,7 +115,7 @@ function setupFileInput() {
     "drop",
     (e) => {
       if (e.dataTransfer.files.length) {
-        selectedFile = e.dataTransfer.files[0];
+        selectedFiles = Array.from(e.dataTransfer.files);
         showSelectedFile();
       }
     },
@@ -84,19 +124,48 @@ function setupFileInput() {
 }
 
 function showSelectedFile() {
-  if (selectedFile.size > 2 * 1024 * 1024 * 1024) {
-    showToast("Warning: Files over 2GB may fail on some devices");
+  const fileList = document.getElementById("fileList");
+  fileList.innerHTML = "";
+  let totalSize = 0;
+
+  selectedFiles.forEach((file, index) => {
+    totalSize += file.size;
+    const item = document.createElement("div");
+    item.className = "bg-card border border-border rounded-xl p-4 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2";
+    item.innerHTML = `
+      <div class="w-8 h-8 text-accent flex-shrink-0">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold truncate">${file.name}</div>
+        <div class="text-slate-500 text-sm">${formatBytes(file.size)}</div>
+      </div>
+      <button onclick="removeFile(${index})" class="text-slate-500 hover:text-danger transition text-xl">&times;</button>
+    `;
+    fileList.appendChild(item);
+  });
+
+  if (totalSize > 2 * 1024 * 1024 * 1024) {
+    showToast("Warning: Total size over 2GB may fail on some devices");
   }
-  document.getElementById("fileName").textContent = selectedFile.name;
-  document.getElementById("fileSize").textContent = formatBytes(
-    selectedFile.size,
-  );
+
   document.getElementById("fileSelectArea").classList.add("hidden");
   document.getElementById("selectedFile").classList.remove("hidden");
 }
 
+function removeFile(index) {
+  selectedFiles.splice(index, 1);
+  if (selectedFiles.length === 0) {
+    clearFile();
+  } else {
+    showSelectedFile();
+  }
+}
+
 function clearFile() {
-  selectedFile = null;
+  selectedFiles = [];
   document.getElementById("fileInput").value = "";
   document.getElementById("selectedFile").classList.add("hidden");
   document.getElementById("fileSelectArea").classList.remove("hidden");
@@ -125,7 +194,7 @@ async function createRoom() {
       text: shareLink,
       width: 200,
       height: 200,
-      colorDark: "#8b5cf6",
+      colorDark: "#a78bfa",
       colorLight: "#09090b",
       correctLevel: QRCode.CorrectLevel.M,
     });
@@ -153,8 +222,10 @@ function setupSenderConnection() {
   dataChannel.binaryType = "arraybuffer";
 
   dataChannel.onopen = () => {
-    console.log("DataChannel open — starting file send");
-    sendFile();
+    console.log("DataChannel open");
+    if (transferAccepted) {
+      sendFile();
+    }
   };
 
   dataChannel.onclose = () => {
@@ -176,6 +247,15 @@ function setupSenderConnection() {
     ) {
       document.getElementById("waitingStatus").innerHTML =
         '<div class="w-2 h-2 rounded-full bg-green-500"></div> <span class="text-green-400">Receiver connected!</span>';
+
+      // Send transfer request after connection if files are selected
+      if (selectedFiles.length > 0) {
+        const manifest = {
+          sender: localStorage.getItem("user_name") || "Anonymous",
+          files: selectedFiles.map(f => ({ name: f.name, size: f.size, type: f.type }))
+        };
+        sendSignal("transfer-request", manifest);
+      }
     }
   };
 
@@ -190,18 +270,14 @@ function setupSenderConnection() {
     .catch((err) => console.error("Offer error:", err));
 }
 
-// ─── Sender: Send File via DataChannel ───
-function sendFile() {
-  if (!selectedFile || !dataChannel || dataChannel.readyState !== "open")
+// ─── Sender: Send Files via DataChannel ───
+async function sendFile() {
+  if (selectedFiles.length === 0 || !dataChannel || dataChannel.readyState !== "open") {
+    if (selectedFiles.length > 0) transferAccepted = true; // Wait for channel to open
     return;
+  }
 
-  // Send metadata first
-  const meta = JSON.stringify({
-    name: selectedFile.name,
-    size: selectedFile.size,
-    type: selectedFile.type,
-  });
-  dataChannel.send(meta);
+  transferAccepted = false; // Reset flag
 
   document.getElementById("shareInfo").classList.add("hidden");
   document.getElementById("senderProgress").classList.remove("hidden");
@@ -209,66 +285,78 @@ function sendFile() {
   const BUFFER_HIGH = 2 * 1024 * 1024; // 2MB
   dataChannel.bufferedAmountLowThreshold = 512 * 1024; // 512KB
 
-  const fileReader = new FileReader();
-  let offset = 0;
-  const fileSize = selectedFile.size;
+  for (let i = 0; i < selectedFiles.length; i++) {
+    const file = selectedFiles[i];
+    document.getElementById("progressLabel").textContent = `Sending (${i + 1}/${selectedFiles.length}): ${file.name}`;
 
-  function updateProgress() {
-    const percent = Math.min(100, Math.round((offset / fileSize) * 100));
-    document.getElementById("progressBar").style.width = percent + "%";
-    document.getElementById("progressPercent").textContent = percent + "%";
-    document.getElementById("progressDetail").textContent =
-      formatBytes(offset) + " / " + formatBytes(fileSize);
-  }
+    // Send metadata for this file
+    dataChannel.send(JSON.stringify({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      index: i,
+      total: selectedFiles.length
+    }));
 
-  function readAndSend() {
-    const slice = selectedFile.slice(offset, offset + CHUNK_SIZE);
-    fileReader.readAsArrayBuffer(slice);
-  }
+    await new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      let offset = 0;
 
-  function sendNextChunk() {
-    if (dataChannel.readyState !== "open") return;
+      function updateProgress() {
+        const percent = Math.min(100, Math.round((offset / file.size) * 100));
+        document.getElementById("progressBar").style.width = percent + "%";
+        document.getElementById("progressPercent").textContent = percent + "%";
+        document.getElementById("progressDetail").textContent =
+          formatBytes(offset) + " / " + formatBytes(file.size);
+      }
 
-    if (offset >= fileSize) {
-      dataChannel.send("__EOF__");
-      document.getElementById("senderProgress").classList.add("hidden");
-      document.getElementById("senderDone").classList.remove("hidden");
-      stopPolling();
-      return;
-    }
+      function sendNextChunk() {
+        if (dataChannel.readyState !== "open") return reject("Channel closed");
 
-    if (dataChannel.bufferedAmount > BUFFER_HIGH) {
-      dataChannel.onbufferedamountlow = () => {
-        dataChannel.onbufferedamountlow = null;
+        if (offset >= file.size) {
+          dataChannel.send("__EOF__");
+          resolve();
+          return;
+        }
+
+        if (dataChannel.bufferedAmount > BUFFER_HIGH) {
+          dataChannel.onbufferedamountlow = () => {
+            dataChannel.onbufferedamountlow = null;
+            readAndSend();
+          };
+          return;
+        }
         readAndSend();
-      };
-      return;
-    }
+      }
 
-    readAndSend();
+      function readAndSend() {
+        const slice = file.slice(offset, offset + CHUNK_SIZE);
+        fileReader.readAsArrayBuffer(slice);
+      }
+
+      fileReader.onload = (e) => {
+        dataChannel.send(e.target.result);
+        offset += e.target.result.byteLength;
+        updateProgress();
+        sendNextChunk();
+      };
+
+      fileReader.onerror = () => reject("File read error");
+      sendNextChunk();
+    });
   }
 
-  fileReader.onload = (e) => {
-    if (dataChannel.readyState !== "open") return;
-    dataChannel.send(e.target.result);
-    offset += e.target.result.byteLength;
-    updateProgress();
-    sendNextChunk();
-  };
-
-  fileReader.onerror = () => {
-    console.error("File read error");
-  };
-
-  sendNextChunk();
+  document.getElementById("senderProgress").classList.add("hidden");
+  document.getElementById("senderDone").classList.remove("hidden");
+  stopPolling();
 }
 
 // ─── Receiver: Connect & Receive ───
 async function startReceiver() {
   pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-  let receivedChunks = [];
-  let fileMeta = null;
+  let currentFileChunks = [];
+  let currentFileMeta = null;
   let receivedSize = 0;
 
   // Connection timeout — 30 seconds
@@ -303,57 +391,58 @@ async function startReceiver() {
     dataChannel.binaryType = "arraybuffer";
 
     dataChannel.onmessage = (event) => {
-      // First message is metadata (JSON string)
-      if (!fileMeta && typeof event.data === "string") {
+      // First message for a file is metadata (JSON string)
+      if (!currentFileMeta && typeof event.data === "string") {
         try {
-          fileMeta = JSON.parse(event.data);
+          currentFileMeta = JSON.parse(event.data);
           document.getElementById("recvConnecting").classList.add("hidden");
           document.getElementById("recvProgress").classList.remove("hidden");
-          document.getElementById("recvFileName").textContent = fileMeta.name;
-          document.getElementById("recvFileSize").textContent = formatBytes(
-            fileMeta.size,
-          );
+          document.getElementById("recvFileName").textContent = `[${currentFileMeta.index + 1}/${currentFileMeta.total}] ${currentFileMeta.name}`;
+          document.getElementById("recvFileSize").textContent = formatBytes(currentFileMeta.size);
+          receivedSize = 0;
+          currentFileChunks = [];
           return;
-        } catch (e) {
-          // Not JSON, treat as data
-        }
+        } catch (e) { }
       }
 
-      // Check for EOF
+      // Check for EOF (end of current file)
       if (typeof event.data === "string" && event.data === "__EOF__") {
-        // File complete
-        const blob = new Blob(receivedChunks, {
-          type: fileMeta?.type || "application/octet-stream",
+        const blob = new Blob(currentFileChunks, {
+          type: currentFileMeta?.type || "application/octet-stream",
         });
         const url = URL.createObjectURL(blob);
 
-        document.getElementById("recvProgress").classList.add("hidden");
-        document.getElementById("recvDone").classList.remove("hidden");
-        document.getElementById("recvDoneFile").textContent =
-          (fileMeta?.name || "file") + " — " + formatBytes(blob.size);
+        if (currentFileMeta.index + 1 === currentFileMeta.total) {
+          // All files complete
+          document.getElementById("recvProgress").classList.add("hidden");
+          document.getElementById("recvDone").classList.remove("hidden");
+          document.getElementById("recvDoneFile").textContent = `Received ${currentFileMeta.total} file(s)`;
 
-        const link = document.getElementById("recvDownloadLink");
-        link.href = url;
-        link.download = fileMeta?.name || "download";
-        link.onclick = () => {
-          // Auto-revoke after download starts
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-        };
-
-        stopPolling();
+          const link = document.getElementById("recvDownloadLink");
+          link.href = url;
+          link.download = currentFileMeta?.name || "download";
+          link.innerHTML = `Download Final File: ${currentFileMeta.name}`;
+          link.onclick = () => setTimeout(() => URL.revokeObjectURL(url), 5000);
+          stopPolling();
+        } else {
+          // Download individual file and prepare for next
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = currentFileMeta.name;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          currentFileMeta = null;
+        }
         return;
       }
 
       // Binary data chunk
       if (event.data instanceof ArrayBuffer) {
-        receivedChunks.push(event.data);
+        currentFileChunks.push(event.data);
         receivedSize += event.data.byteLength;
 
-        if (fileMeta) {
-          const percent = Math.min(
-            100,
-            Math.round((receivedSize / fileMeta.size) * 100),
-          );
+        if (currentFileMeta) {
+          const percent = Math.min(100, Math.round((receivedSize / currentFileMeta.size) * 100));
           document.getElementById("recvBar").style.width = percent + "%";
           document.getElementById("recvPercent").textContent = percent + "%";
         }
@@ -432,6 +521,14 @@ async function pollSignals() {
   }
 }
 
+function respondToTransfer(accepted) {
+  document.getElementById("requestModal").classList.add("hidden");
+  sendSignal("transfer-response", { accepted: accepted });
+  if (!accepted) {
+    showRecvError("You declined the transfer.");
+  }
+}
+
 async function handleSignal(signal) {
   console.log("Handling signal:", signal.type, "from:", signal.from);
 
@@ -461,6 +558,22 @@ async function handleSignal(signal) {
           // Buffer candidates until remote description is set
           pendingCandidates.push(signal.data);
         }
+      }
+    } else if (signal.type === "transfer-request") {
+      const { sender, files } = signal.data;
+      const count = files.length;
+      const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+      document.getElementById("requestInfo").textContent = `${sender} wants to share ${count} file(s) (${formatBytes(totalSize)})`;
+      document.getElementById("requestModal").classList.remove("hidden");
+    } else if (signal.type === "transfer-response") {
+      if (signal.data.accepted) {
+        toast("Transfer accepted! Starting...");
+        transferAccepted = true;
+        sendFile();
+      } else {
+        toast("Transfer declined by receiver.");
+        transferAccepted = false;
+        resetSender();
       }
     }
   } catch (err) {

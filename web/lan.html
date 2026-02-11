@@ -12,15 +12,15 @@
         extend: {
           colors: {
             bg: "#09090b",
-            card: "#18181b",
-            "card-hover": "#27272a",
-            border: "#27272a",
-            accent: "#f59e0b",
-            "accent-soft": "rgba(245,158,11,0.1)",
-            success: "#22c55e",
+            card: "#121214",
+            "card-hover": "#1c1c1f",
+            border: "#1f1f22",
+            accent: "#fbbf24",
+            "accent-soft": "rgba(251, 191, 36, 0.08)",
+            success: "#10b981",
             danger: "#ef4444",
-            warning: "#fb923c",
-            muted: "#a1a1aa",
+            warning: "#f59e0b",
+            muted: "#71717a",
           },
         },
       },
@@ -39,7 +39,7 @@
       top: 50%;
       left: 50%;
       border-radius: 50%;
-      border: 1px solid #f59e0b;
+      border: 1px solid #fbbf24;
       transform: translate(-50%, -50%);
       animation: ripple 4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
     }
@@ -143,13 +143,20 @@
 
     <!-- Device Area -->
     <div id="deviceArea"
-      class="relative mx-auto mt-8 w-[min(340px,90vw)] h-[min(340px,90vw)] bg-[radial-gradient(circle,rgba(39,39,42,0.3)_0%,transparent_70%)] rounded-full">
+      class="relative mx-auto mt-8 w-[min(340px,90vw)] h-[min(340px,90vw)] bg-[radial-gradient(circle,rgba(251,191,36,0.1)_0%,transparent_70%)] rounded-full">
       <div class="me-ring"></div>
       <!-- Me Node -->
       <div onclick="openSharedUpload()"
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[clamp(80px,25vw,100px)] h-[clamp(80px,25vw,100px)] rounded-full bg-card border-2 border-accent flex flex-col items-center justify-center cursor-pointer z-[5] shadow-lg">
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[clamp(80px,25vw,100px)] h-[clamp(80px,25vw,100px)] rounded-full bg-card border-2 border-accent flex flex-col items-center justify-center cursor-pointer z-[5] shadow-lg group">
         <div id="meIcon" class="w-8 h-8 text-accent"></div>
-        <div id="meName" class="text-[clamp(0.6rem,2vw,0.75rem)] text-white mt-0.5 font-bold"></div>
+        <div class="flex items-center gap-1 mt-0.5" onclick="event.stopPropagation(); changeName()">
+          <div id="meName" class="text-[clamp(0.6rem,2vw,0.75rem)] text-white font-bold"></div>
+          <svg class="w-2.5 h-2.5 text-muted opacity-0 group-hover:opacity-100 transition" fill="none"
+            viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </div>
         <div class="text-[0.6rem] text-muted uppercase tracking-wider">
           You
         </div>
@@ -172,12 +179,23 @@
   <div id="sharedBar"
     class="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-xl border-t border-border py-3 px-3 z-[100] flex items-center gap-3 overflow-x-auto shared-bar">
     <button onclick="openSharedUpload()" title="Upload files to shared space"
-      class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-accent rounded-xl text-white text-sm font-semibold cursor-pointer transition-all hover:bg-amber-600">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-accent text-black rounded-xl text-sm font-bold cursor-pointer transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(251,191,36,0.2)]">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round"
           d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
       </svg>
       Upload File
+    </button>
+
+    <div class="flex-1"></div>
+
+    <button onclick="changeName()" title="Settings"
+      class="p-2.5 rounded-xl bg-white/5 border border-border text-muted hover:text-white hover:bg-white/10 transition flex-shrink-0">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
     </button>
   </div>
 
@@ -190,7 +208,7 @@
       <div id="modalName" class="text-accent font-semibold mb-4"></div>
 
       <div id="modalDropArea"
-        class="border-2 border-dashed border-border bg-bg/30 rounded-2xl p-12 mb-6 cursor-pointer transition-all hover:border-accent hover:bg-accent-soft flex flex-col items-center">
+        class="border-2 border-dashed border-border bg-bg/30 rounded-2xl p-10 mb-4 cursor-pointer transition-all hover:border-accent hover:bg-accent-soft flex flex-col items-center">
         <svg class="w-10 h-10 text-muted mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
@@ -198,6 +216,15 @@
         <strong>Drag & Drop files here</strong>
         <p class="mt-2 text-sm opacity-80">or click to browse (Max 2 GB)</p>
       </div>
+
+      <div id="modalFileList" class="max-h-40 overflow-y-auto space-y-2 mb-4 hidden">
+        <!-- Queued files show here -->
+      </div>
+
+      <button id="modalSendBtn" onclick="startLanUpload()"
+        class="w-full py-3 mb-2 bg-accent text-black rounded-xl font-bold hidden hover:bg-white transition">
+        Send Files
+      </button>
       <input type="file" id="modalFileInput" multiple class="hidden" />
 
       <div id="transferProgress" class="mt-4 hidden">
@@ -259,6 +286,63 @@
       </button>
     </div>
   </div>
+
+  <!-- LAN Request Modal -->
+  <div id="lanRequestModal"
+    class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[500] hidden flex items-center justify-center p-6">
+    <div class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl">
+      <div class="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <svg class="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-center mb-2">Incoming LAN Files</h3>
+      <p class="text-slate-400 text-center text-sm mb-6" id="lanRequestInfo">
+        Somebody is sending you files
+      </p>
+      <div class="flex gap-3">
+        <button onclick="respondToLan(false)"
+          class="flex-1 py-3 px-4 rounded-xl border border-border font-semibold hover:bg-white/5 transition">
+          Decline
+        </button>
+        <button onclick="respondToLan(true)"
+          class="flex-1 py-3 px-4 rounded-xl bg-accent text-black font-bold hover:bg-white transition">
+          Accept
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Name Change Modal -->
+  <div id="nameModal"
+    class="fixed inset-0 bg-bg/80 backdrop-blur-md z-[600] hidden flex items-center justify-center p-6">
+    <div
+      class="bg-card border border-border rounded-3xl p-8 w-full max-w-sm shadow-2xl scale-95 transition-all duration-300"
+      id="nameModalCard">
+      <h3 class="text-xl font-bold mb-1">Display Name</h3>
+      <p class="text-muted text-sm mb-6">How others will see you on the network</p>
+
+      <div class="relative mb-6">
+        <input type="text" id="newNameInput"
+          class="w-full bg-bg border border-border rounded-xl px-4 py-3 outline-none focus:border-accent transition text-white"
+          placeholder="Enter your name" maxlength="20">
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeNameModal()"
+          class="flex-1 py-3 rounded-xl border border-border font-semibold hover:bg-white/5 transition">
+          Cancel
+        </button>
+        <button onclick="saveNameFromModal()"
+          class="flex-1 py-3 rounded-xl bg-accent text-black font-bold hover:bg-white transition shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
 
   <!-- Notification -->
   <div id="notif"

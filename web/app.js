@@ -10,6 +10,8 @@ const myId =
   })();
 let peers = {},
   targetPeer = null,
+  queuedFiles = [],
+  incomingFiles = [],
   notifFile = null,
   evtSource = null;
 
@@ -55,15 +57,17 @@ register().then(() => {
 });
 
 async function register() {
+  const customName = localStorage.getItem("user_name");
   try {
     const r = await fetch("/api/register", {
       method: "POST",
-      body: JSON.stringify({ id: myId }),
+      body: JSON.stringify({ id: myId, name: customName }),
     });
-    if (!r.ok) throw new Error("status " + r.status);
     const d = await r.json();
     document.getElementById("meIcon").innerHTML = getDeviceSvg(d.icon);
     document.getElementById("meName").textContent = d.name;
+    // Re-render peers if name was updated (though SSE should handle it, this is for immediate feedback)
+    renderPeers();
   } catch (e) {
     console.error("Registration failed:", e);
     document.getElementById("emptyState").innerHTML =
@@ -71,6 +75,38 @@ async function register() {
       e.message +
       '</div><p style="font-size:0.7rem;margin-top:1rem">Check if your laptop firewall is blocking port 8080</p>';
   }
+}
+
+async function changeName() {
+  const currentName = document.getElementById("meName").textContent;
+  const modal = document.getElementById("nameModal");
+  const input = document.getElementById("newNameInput");
+
+  input.value = currentName === "Anonymous" ? "" : currentName;
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    document.getElementById("nameModalCard").classList.remove("scale-95", "opacity-0");
+    input.focus();
+  }, 10);
+}
+
+function closeNameModal() {
+  const modal = document.getElementById("nameModal");
+  document.getElementById("nameModalCard").classList.add("scale-95", "opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 300);
+}
+
+async function saveNameFromModal() {
+  const input = document.getElementById("newNameInput");
+  const newName = input.value.trim();
+  const currentName = document.getElementById("meName").textContent;
+
+  if (newName && newName !== currentName) {
+    localStorage.setItem("user_name", newName);
+    await register();
+    toast("Name updated!");
+  }
+  closeNameModal();
 }
 
 function connectSSE() {
@@ -92,18 +128,20 @@ function connectSSE() {
     delete peers[p.id];
     renderPeers();
   });
-  evtSource.addEventListener("file-sent", (e) => {
+  evtSource.addEventListener("files-sent", (e) => {
     const d = JSON.parse(e.data);
-    notifFile = d.filename;
+    incomingFiles = d.filenames;
+
+    // Show Accept/Decline modal for private transfers
+    const modal = document.getElementById("lanRequestModal");
+    const info = document.getElementById("lanRequestInfo");
+    info.textContent = `${d.from_name} wants to send you ${incomingFiles.length} file(s).`;
+    modal.classList.remove("hidden");
+
+    // Backup: standard notification too
     document.getElementById("notifTitle").textContent =
-      d.from_name + " sent a file";
-    document.getElementById("notifSub").textContent = d.filename;
-    document.getElementById("notif").classList.add("notif-show");
-    setTimeout(
-      () => document.getElementById("notif").classList.remove("notif-show"),
-      8000,
-    );
-    loadSharedFiles();
+      d.from_name + " sent " + incomingFiles.length + " file(s)";
+    document.getElementById("notifSub").textContent = incomingFiles[0] + (incomingFiles.length > 1 ? " and more..." : "");
   });
   evtSource.addEventListener("shared-update", () => loadSharedFiles());
   evtSource.onerror = () => setTimeout(connectSSE, 3000);
@@ -155,6 +193,8 @@ function renderPeers() {
 function closeModal() {
   document.getElementById("modalOverlay").classList.remove("open");
   targetPeer = null;
+  queuedFiles = [];
+  renderQueue();
 }
 function openSharedUpload() {
   document.getElementById("sharedOverlay").classList.add("open");
@@ -296,7 +336,11 @@ function setupDragDrop() {
     // File selected via picker
     input.addEventListener("change", () => {
       if (input.files.length) {
-        upload(input.files, getTo(), prefix);
+        if (prefix === "transfer") {
+          queueFiles(input.files);
+        } else {
+          upload(input.files, getTo(), prefix);
+        }
         input.value = "";
       }
     });
@@ -323,11 +367,69 @@ function setupDragDrop() {
       "drop",
       (e) => {
         const files = e.dataTransfer.files;
-        if (files.length) upload(files, getTo(), prefix);
+        if (files.length) {
+          if (prefix === "transfer") {
+            queueFiles(files);
+          } else {
+            upload(files, getTo(), prefix);
+          }
+        }
       },
       false,
     );
   });
+}
+
+function queueFiles(files) {
+  queuedFiles = Array.from(files);
+  renderQueue();
+}
+
+function renderQueue() {
+  const list = document.getElementById("modalFileList");
+  const sendBtn = document.getElementById("modalSendBtn");
+  const dropArea = document.getElementById("modalDropArea");
+
+  list.innerHTML = "";
+  if (queuedFiles.length > 0) {
+    queuedFiles.forEach((f, i) => {
+      const item = document.createElement("div");
+      item.className = "bg-bg/50 rounded-lg p-2 text-xs flex items-center justify-between border border-border";
+      item.innerHTML = `<span class="truncate pr-2">${f.name}</span> <span class="text-muted">${formatBytes(f.size)}</span>`;
+      list.appendChild(item);
+    });
+    list.classList.remove("hidden");
+    sendBtn.classList.remove("hidden");
+    dropArea.classList.add("hidden");
+  } else {
+    list.classList.add("hidden");
+    sendBtn.classList.add("hidden");
+    dropArea.classList.remove("hidden");
+  }
+}
+
+function startLanUpload() {
+  if (queuedFiles.length === 0) return;
+  upload(queuedFiles, targetPeer, "transfer");
+  queuedFiles = [];
+}
+
+function respondToLan(accepted) {
+  document.getElementById("lanRequestModal").classList.add("hidden");
+  if (accepted && incomingFiles.length > 0) {
+    // Start downloading each file
+    incomingFiles.forEach((name, i) => {
+      setTimeout(() => {
+        const link = document.createElement("a");
+        link.href = "/download/" + name + "?id=" + myId;
+        link.download = name;
+        link.click();
+      }, i * 500); // Stagger downloads to prevent browser blocking
+    });
+    toast(`Downloading ${incomingFiles.length} file(s)...`);
+    loadSharedFiles();
+  }
+  incomingFiles = [];
 }
 
 function preventDefaults(e) {
