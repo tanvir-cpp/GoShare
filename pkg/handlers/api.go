@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"fileshare/pkg/discovery"
+	"fileshare/pkg/network"
 )
 
 var SharedDir = "shared_files"
@@ -327,4 +328,13 @@ func HandleGetDevice(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dev)
+}
+func HandleInfo(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		IP string `json:"ip"`
+	}{
+		IP: network.GetLocalIP(),
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }

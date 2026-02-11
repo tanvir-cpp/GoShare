@@ -27,10 +27,17 @@
     };
   </script>
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+    @import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;800&display=swap");
 
     body {
-      font-family: "Inter", system-ui, sans-serif;
+      font-family: "Hanken Grotesk", system-ui, sans-serif;
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+      background-size: 30px 30px;
     }
 
     .pulse {
@@ -55,38 +62,40 @@
   </style>
 </head>
 
-<body class="bg-bg min-h-screen text-white flex flex-col items-center">
+<body class="bg-bg grid-bg min-h-screen text-white flex flex-col items-center">
   <!-- Top Navigation Bar -->
   <nav
-    class="fixed top-0 left-0 right-0 h-14 border-b border-border bg-bg/50 backdrop-blur-md z-[150] flex items-center px-6 justify-between">
+    class="fixed top-0 left-0 right-0 h-14 border-b border-border bg-bg/80 backdrop-blur-xl z-[150] flex items-center px-6 justify-between">
     <div class="flex items-center gap-4">
-      <a href="/" class="text-white hover:text-white/80 transition p-1">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <a href="/" class="text-zinc-500 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
         </svg>
       </a>
-      <span class="text-sm font-bold tracking-tight">P2P <span class="text-muted">Share</span></span>
+      <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Anywhere Sharing</span>
     </div>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-8">
       <a href="/lan.html"
-        class="text-xs font-semibold text-muted hover:text-white transition uppercase tracking-widest">LAN Mode</a>
+        class="text-[10px] font-bold text-zinc-500 hover:text-white transition uppercase tracking-[0.2em]">Switch to
+        Nearby Mode</a>
+      <div class="w-2 h-2 rounded-full bg-white animate-pulse"></div>
     </div>
   </nav>
 
   <main class="flex-1 w-full max-w-4xl px-6 mt-20">
     <!-- SENDER VIEW (default) -->
-    <div id="senderView">
-      <div class="text-center mb-10">
+    <div id="senderView" class="mt-12">
+      <div class="text-center mb-12">
         <div
-          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-4 text-xs font-medium text-muted">
-          <span>Sharing as:</span>
+          class="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-6">
+          <span>Identity:</span>
           <span id="userNameDisplay" class="text-white">Anonymous</span>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">
-          P2P <span class="text-accent">Share</span>
+        <h1 class="text-4xl font-extrabold tracking-tight mb-2 uppercase">
+          Link Sharing
         </h1>
-        <p class="text-slate-400 text-sm">
-          Select a file to generate a shareable link and QR code
+        <p class="text-zinc-600 text-[10px] uppercase tracking-[0.3em] font-bold">
+          Securely share files anywhere via link
         </p>
       </div>
 
@@ -114,8 +123,11 @@
           <!-- Files will be listed here -->
         </div>
         <button id="shareBtn" onclick="createRoom()"
-          class="w-full py-3.5 bg-accent text-black font-bold rounded-2xl transition hover:bg-white hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent/20">
-          Generate Share Link
+          class="group relative w-full py-4 bg-white text-black text-[10px] font-extrabold uppercase tracking-[0.2em] transition-all hover:bg-zinc-200">
+          <span class="relative z-10">Create Share Link</span>
+          <div
+            class="absolute inset-0 translate-x-1 translate-y-1 border border-white -z-0 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+          </div>
         </button>
       </div>
 

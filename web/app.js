@@ -13,7 +13,8 @@ let peers = {},
   queuedFiles = [],
   incomingFiles = [],
   notifFile = null,
-  evtSource = null;
+  evtSource = null,
+  serverIp = window.location.hostname;
 
 // SVG icon mapping for device icons (matches backend icon identifiers)
 const deviceIcons = {
@@ -52,11 +53,19 @@ register().then(() => {
   connectSSE();
   loadSharedFiles();
   setupDragDrop();
-  displayShareUrl();
   window.addEventListener("resize", renderPeers);
 });
 
 async function register() {
+  // Fetch server info for correct LAN URL
+  try {
+    const infoRes = await fetch("/api/info");
+    const infoData = await infoRes.json();
+    serverIp = infoData.ip;
+  } catch (e) {
+    console.error("Failed to fetch server info:", e);
+  }
+
   const customName = localStorage.getItem("user_name");
   try {
     const r = await fetch("/api/register", {
@@ -437,11 +446,44 @@ function preventDefaults(e) {
   e.stopPropagation();
 }
 
-function displayShareUrl() {
-  const url = window.location.href;
-  document.getElementById("shareUrl").textContent = url;
+function openConnectModal() {
+  const modal = document.getElementById("connectModal");
+  const modalContent = document.getElementById("connectModalCard");
+  const urlText = document.getElementById("lanUrlText");
+  const qrEl = document.getElementById("lanQr");
+
+  const fullUrl = `http://${serverIp}:${window.location.port}${window.location.pathname}`;
+  urlText.textContent = fullUrl;
+
+  qrEl.innerHTML = "";
+  new QRCode(qrEl, {
+    text: fullUrl,
+    width: 160,
+    height: 160,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+
+  modal.classList.remove("hidden");
+  setTimeout(() => {
+    modalContent.classList.remove("scale-95", "opacity-0");
+  }, 10);
 }
 
+function closeConnectModal() {
+  const modal = document.getElementById("connectModal");
+  const modalContent = document.getElementById("connectModalCard");
+  modalContent.classList.add("scale-95", "opacity-0");
+  setTimeout(() => modal.classList.add("hidden"), 300);
+}
+
+function copyConnectUrl() {
+  const url = document.getElementById("lanUrlText").textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    toast("URL copied!");
+  });
+}
 function copyUrl() {
   const url = window.location.href;
   navigator.clipboard

@@ -57,6 +57,7 @@ func main() {
 	http.HandleFunc("/api/files", appHandler(handlers.HandleListFiles))
 	http.HandleFunc("/api/delete/", appHandler(handlers.HandleDelete))
 	http.HandleFunc("/api/device/", appHandler(handlers.HandleGetDevice))
+	http.HandleFunc("/api/info", appHandler(handlers.HandleInfo))
 	http.HandleFunc("/download/", handlers.HandleDownload)
 
 	// P2P signaling routes
