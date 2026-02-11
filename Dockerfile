@@ -1,30 +1,32 @@
 # ─── Build Stage ───
-FROM golang:1.24.0-alpine AS builder
-
-# Install build dependencies
-RUN apk add --no-cache git
+# Using the stable Go 1.24 image (Debian-based for build stability)
+FROM golang:1.24 AS builder
 
 WORKDIR /app
 
-# Copy source code
+# Copy the entire project
 COPY . .
 
-# Ensure dependencies are correct (even if using only standard library)
-RUN go mod tidy
-
-# Build as a static binary
-# Targeting the explicit main.go file path
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o goshare cmd/goshare/main.go
+# Build as a truly static binary
+# -a: force rebuilding of packages
+# -installsuffix cgo: ensures we don't use local cgo deps
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -ldflags="-s -w -extldflags '-static'" \
+    -o /goshare ./cmd/goshare
 
 # ─── Production Stage ───
 FROM alpine:latest
 
-# Security: Create a non-root user
+# Security: Install CA certificates for any HTTPS outgoing traffic
+RUN apk add --no-cache ca-certificates
+
+# Create a non-root user
 RUN adduser -D -u 1000 appuser
 WORKDIR /app
 
 # Copy the binary and static assets
-COPY --from=builder /app/goshare .
+COPY --from=builder /goshare .
 COPY --from=builder /app/web ./web
 
 # Create storage directory and set permissions
