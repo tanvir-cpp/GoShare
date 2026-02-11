@@ -178,20 +178,20 @@ function renderPeers() {
     const p = peers[id];
     const el = document.createElement("div");
     el.className =
-      "peer absolute w-24 h-24 rounded-full bg-card/40 backdrop-blur-xl border border-white/[0.05] flex flex-col items-center justify-center cursor-pointer transition-all shadow-2xl hover:border-accent/50 hover:bg-card/60 group";
+      "peer absolute w-[clamp(70px,22vw,96px)] h-[clamp(70px,22vw,96px)] rounded-full bg-card/40 backdrop-blur-xl border border-white/[0.05] flex flex-col items-center justify-center cursor-pointer transition-all shadow-2xl hover:border-accent/50 hover:bg-card/60 group";
     el.style.cssText =
       "left:" + x + "px;top:" + y + "px;transform:translate(-50%,-50%)";
     el.innerHTML = `
-      <div class="relative w-10 h-10 flex items-center justify-center mb-1">
+      <div class="relative w-8 h-8 flex items-center justify-center mb-1">
         <div class="absolute inset-0 bg-accent/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <div class="w-7 h-7 text-accent/80 group-hover:text-accent transition-colors relative z-10">
+        <div class="w-6 h-6 text-accent/80 group-hover:text-accent transition-colors relative z-10">
           ${getDeviceSvg(p.icon)}
         </div>
       </div>
-      <div class="text-[10px] text-zinc-200 font-bold tracking-tight max-w-[80%] truncate relative z-10">
+      <div class="text-[9px] text-zinc-200 font-bold tracking-tight max-w-[80%] truncate relative z-10">
         ${p.name}
       </div>
-      <div class="text-[8px] text-zinc-500 uppercase tracking-widest font-black opacity-60 group-hover:opacity-100 transition-opacity">
+      <div class="text-[7px] text-zinc-500 uppercase tracking-widest font-black opacity-60 group-hover:opacity-100 transition-opacity">
         ${p.type}
       </div>
     `;
@@ -245,17 +245,18 @@ function upload(files, to, prefix) {
   const iconBox = document.getElementById("transferIcon");
 
   nameEl.textContent =
-    files.length > 1 ? `${files.length} Files` : files[0].name;
-  stageEl.textContent = "Negotiating...";
+    files.length > 1 ? `Sending ${files.length} files` : files[0].name;
+  stageEl.textContent = "Getting ready...";
   bar.style.width = "0%";
   percentEl.textContent = "0%";
   speedEl.textContent = "0 MB/s";
   etaEl.textContent = "--:--";
   abortBtn.classList.remove("hidden");
   successBtn.classList.add("hidden");
-  iconBox.innerHTML = `<svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" /></svg>`;
+  iconBox.classList.remove("bg-success", "border-success", "success-ring");
+  iconBox.innerHTML = `<svg class="w-7 h-7 sm:w-8 sm:h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" /></svg>`;
 
-  overlay.classList.remove("hidden");
+  overlay.style.display = "flex";
   setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
 
   transferStartTime = Date.now();
@@ -273,7 +274,7 @@ function upload(files, to, prefix) {
       bar.style.width = percent + "%";
       percentEl.textContent = percent + "%";
       speedEl.textContent = formatBytes(speed) + "/s";
-      stageEl.textContent = "Transmitting Data";
+      stageEl.textContent = "Sending your files...";
 
       if (eta > 0 && eta < 3600) {
         const mins = Math.floor(eta / 60);
@@ -289,17 +290,18 @@ function upload(files, to, prefix) {
     if (currentXhr.status >= 200 && currentXhr.status < 300) {
       bar.style.width = "100%";
       percentEl.textContent = "100%";
-      stageEl.textContent = "Delivered";
-      speedEl.textContent = "0 MB/s";
-      etaEl.textContent = "00:00";
+      stageEl.textContent = "Sent successfully!";
+      speedEl.textContent = "Done";
+      etaEl.textContent = "0:00";
 
-      // Success Animation
-      iconBox.classList.add("bg-white", "border-white");
-      iconBox.innerHTML = `<svg class="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+      // Success Animation — green checkmark with pulse
+      iconBox.classList.remove("bg-white/[0.03]", "border-white/[0.05]");
+      iconBox.classList.add("bg-success", "border-success", "success-ring");
+      iconBox.innerHTML = `<svg class="w-8 h-8 sm:w-10 sm:h-10 text-white check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
       abortBtn.classList.add("hidden");
       successBtn.classList.remove("hidden");
 
-      toast("Sent successfully!");
+      toast("Files sent! ✓");
       loadSharedFiles();
     } else {
       toast("Upload failed: " + currentXhr.statusText);
@@ -323,9 +325,9 @@ function closeTransferOverlay() {
 
   card.classList.add("scale-95", "opacity-0");
   setTimeout(() => {
-    overlay.classList.add("hidden");
+    overlay.style.display = "none";
     // Reset icon and classes for next time
-    iconBox.classList.remove("bg-white", "border-white");
+    iconBox.classList.remove("bg-success", "border-success", "success-ring");
     closeModal();
     closeSharedOverlay();
   }, 300);
@@ -334,7 +336,7 @@ function closeTransferOverlay() {
 function abortTransfer() {
   if (currentXhr) {
     currentXhr.abort();
-    toast("Transfer aborted");
+    toast("Transfer cancelled");
   }
   closeTransferOverlay();
 }

@@ -222,13 +222,13 @@ async function createRoom() {
     });
 
     document.getElementById("shareInfo").classList.remove("hidden");
-    btn.textContent = "Link generated!";
+    btn.textContent = "Link created!";
 
     // Setup WebRTC as sender
     setupSenderConnection();
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = "Generate Share Link";
+    btn.textContent = "Create share link";
     console.error("Failed to create room:", err);
   }
 }
@@ -268,7 +268,7 @@ function setupSenderConnection() {
       pc.iceConnectionState === "completed"
     ) {
       document.getElementById("waitingStatus").innerHTML =
-        '<div class="w-2 h-2 rounded-full bg-green-500"></div> <span class="text-green-400">Receiver connected!</span>';
+        '<div class="w-2 h-2 rounded-full bg-success"></div> <span class="text-success">Someone joined!</span>';
 
       // Send transfer request after connection if files are selected
       if (selectedFiles.length > 0) {
@@ -325,7 +325,7 @@ async function sendFile() {
   const iconBox = document.getElementById("transferIcon");
 
   document.getElementById("shareInfo").classList.add("hidden");
-  overlay.classList.remove("hidden");
+  overlay.style.display = "flex";
   setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
 
   const BUFFER_HIGH = 2 * 1024 * 1024; // 2MB
@@ -337,7 +337,7 @@ async function sendFile() {
     if (abortCurrentTransfer) break;
     const file = selectedFiles[i];
     nameEl.textContent = file.name;
-    stageEl.textContent = `Establishing Tunnel (${i + 1}/${selectedFiles.length})`;
+    stageEl.textContent = `Preparing file ${i + 1} of ${selectedFiles.length}...`;
 
     // Send metadata for this file
     dataChannel.send(
@@ -365,7 +365,7 @@ async function sendFile() {
         bar.style.width = percent + "%";
         percentEl.textContent = percent + "%";
         speedEl.textContent = formatBytes(speed) + "/s";
-        stageEl.textContent = "Transmitting Stream";
+        stageEl.textContent = "Sending your files...";
 
         if (eta > 0 && eta < 3600) {
           const mins = Math.floor(eta / 60);
@@ -419,14 +419,14 @@ async function sendFile() {
   }
 
   // Success State
-  stageEl.textContent = "Transmission Finished";
+  stageEl.textContent = "Sent successfully!";
   bar.style.width = "100%";
   percentEl.textContent = "100%";
-  speedEl.textContent = "0 MB/s";
-  etaEl.textContent = "00:00";
+  speedEl.textContent = "Done";
+  etaEl.textContent = "0:00";
 
-  iconBox.classList.add("bg-white", "border-white");
-  iconBox.innerHTML = `<svg class="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+  iconBox.classList.add("bg-success", "border-success", "success-ring");
+  iconBox.innerHTML = `<svg class="w-8 h-8 sm:w-10 sm:h-10 text-white check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
   abortBtn.classList.add("hidden");
   successBtn.classList.remove("hidden");
 
@@ -467,7 +467,7 @@ async function startReceiver() {
     ) {
       console.warn("ICE connection failed/disconnected", pc.iceConnectionState);
       showRecvError(
-        "Peer-to-Peer tunnel collapsed. Try refreshing Both devices.",
+        "Connection lost. Try refreshing both devices.",
       );
     }
   };
@@ -497,17 +497,17 @@ async function startReceiver() {
           const iconBox = document.getElementById("transferIcon");
 
           nameEl.textContent = currentFileMeta.name;
-          stageEl.textContent = `Receiving (${currentFileMeta.index + 1}/${currentFileMeta.total})`;
+          stageEl.textContent = `Receiving file ${currentFileMeta.index + 1} of ${currentFileMeta.total}...`;
           bar.style.width = "0%";
           abortBtn.classList.remove("hidden");
           successBtn.classList.add("hidden");
-          iconBox.classList.remove("bg-white", "border-white");
-          iconBox.innerHTML = `<svg class="w-8 h-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>`;
+          iconBox.classList.remove("bg-success", "border-success", "success-ring");
+          iconBox.innerHTML = `<svg class="w-7 h-7 sm:w-8 sm:h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>`;
 
-          overlay.classList.remove("hidden");
+          overlay.style.display = "flex";
           setTimeout(() => card.classList.remove("scale-95", "opacity-0"), 10);
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // Check for EOF (end of current file)
@@ -525,10 +525,10 @@ async function startReceiver() {
 
         if (currentFileMeta.index + 1 === currentFileMeta.total) {
           // All files complete
-          stageEl.textContent = "All Files Received";
+          stageEl.textContent = "All files received!";
           bar.style.width = "100%";
-          iconBox.classList.add("bg-white", "border-white");
-          iconBox.innerHTML = `<svg class="w-10 h-10 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+          iconBox.classList.add("bg-success", "border-success", "success-ring");
+          iconBox.innerHTML = `<svg class="w-8 h-8 sm:w-10 sm:h-10 text-white check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
           abortBtn.classList.add("hidden");
           successBtn.classList.remove("hidden");
           stopPolling();
@@ -767,7 +767,7 @@ function resetSender() {
 
   const btn = document.getElementById("shareBtn");
   btn.disabled = false;
-  btn.textContent = "Create Share Link";
+  btn.textContent = "Create share link";
   closeTransferOverlay();
 }
 
@@ -778,14 +778,14 @@ function closeTransferOverlay() {
 
   card.classList.add("scale-95", "opacity-0");
   setTimeout(() => {
-    overlay.classList.add("hidden");
-    iconBox.classList.remove("bg-white", "border-white");
+    overlay.style.display = "none";
+    iconBox.classList.remove("bg-success", "border-success", "success-ring");
   }, 300);
 }
 
 function abortTransfer() {
   abortCurrentTransfer = true;
   if (dataChannel) dataChannel.close();
-  showToast("Transfer Aborted");
+  showToast("Transfer cancelled");
   closeTransferOverlay();
 }
