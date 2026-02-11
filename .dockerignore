@@ -1,7 +1,6 @@
+.git
+.gitignore
+Dockerfile
+README.md
+docs
 *.exe
-shared_files/
-private_*/
-.venv/
-__pycache__/
-*.pyc
-.git/
