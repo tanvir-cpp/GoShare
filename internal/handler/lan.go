@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"fileshare/internal/discovery"
@@ -165,12 +166,12 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 
 // HandleUpload processes multipart file uploads (public or private).
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 2<<30)
-
-	err := r.ParseMultipartForm(100 << 20)
+	// Use a smaller memory buffer (32MB) to prevent RAM spikes.
+	// Large files will be automatically streamed to disk.
+	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
 		log.Printf("Upload parse error: %v", err)
-		http.Error(w, "File too large or invalid upload (Max 2GB)", 413)
+		http.Error(w, "Upload processing error", 400)
 		return
 	}
 
@@ -182,6 +183,12 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	uploadDir := filepath.Join(SharedDir, "public")
 	if rawTo != "" {
 		toID = filepath.Base(rawTo)
+
+		// Security: Ensure toID is a valid alphanumeric device ID to prevent path traversal
+		if len(toID) < 5 || strings.ContainsAny(toID, "./\\") {
+			http.Error(w, "invalid destination", 400)
+			return
+		}
 		uploadDir = filepath.Join(SharedDir, "private", toID)
 	}
 	os.MkdirAll(uploadDir, 0755)

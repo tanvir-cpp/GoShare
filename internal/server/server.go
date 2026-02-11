@@ -1,13 +1,18 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"mime"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 )
 
 // staticHandler serves static files and the homepage for "/".
@@ -31,20 +36,52 @@ func staticHandler(fs http.Handler, homeFile string) http.HandlerFunc {
 	}
 }
 
-// Start binds to the given port (or the next available one) and starts serving.
+// Start binds to the given port (or the next available one) and starts serving with graceful shutdown.
 func Start(port int, ip string) {
 	currentPort := port
+	const maxPortRetries = 10
 
 	for {
+		if currentPort > port+maxPortRetries {
+			log.Fatalf("Failed to find an available port after %d attempts", maxPortRetries)
+		}
+
 		addr := fmt.Sprintf("0.0.0.0:%d", currentPort)
 		l, err := net.Listen("tcp", addr)
-		if err == nil {
-			l.Close()
-			printBanner(ip, currentPort)
-			log.Fatal(http.ListenAndServe(addr, nil))
+		if err != nil {
+			fmt.Printf("  [!] Port %d is busy, trying %d...\n", currentPort, currentPort+1)
+			currentPort++
+			continue
 		}
-		fmt.Printf("  [!] Port %d is busy, trying %d...\n", currentPort, currentPort+1)
-		currentPort++
+
+		printBanner(ip, currentPort)
+
+		srv := &http.Server{
+			Addr: addr,
+		}
+
+		// Channel to listen for interrupt signals
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+		// Run server in a goroutine
+		go func() {
+			if err := srv.Serve(l); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("Server error: %v", err)
+			}
+		}()
+
+		<-stop // Wait for signal
+
+		log.Println("\n  [i] Shutting down gracefully...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("  [!] Server Shutdown Failed: %+v", err)
+		}
+		log.Println("  [✓] Server stopped")
+		return
 	}
 }
 

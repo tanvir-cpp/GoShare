@@ -409,6 +409,11 @@ async function sendFile() {
 
   isTransferring = false;
   stopPolling();
+
+  // Auto-close overlay after success
+  setTimeout(() => {
+    closeTransferOverlay();
+  }, 2500);
 }
 
 // ─── Receiver: Connect & Receive ───
@@ -590,19 +595,20 @@ function sendSignal(type, data) {
 }
 
 function startPolling() {
+  stopPolling(); // Clear any existing
   pollIndex = 0;
-  pollTimer = setInterval(pollSignals, POLL_INTERVAL);
-  pollSignals(); // Immediate first poll
+  pollSignals();
 }
 
 function stopPolling() {
   if (pollTimer) {
-    clearInterval(pollTimer);
+    clearTimeout(pollTimer);
     pollTimer = null;
   }
 }
 
 async function pollSignals() {
+  if (pollTimer) clearTimeout(pollTimer);
   try {
     const res = await fetch(
       "/api/p2p/poll?room=" + roomId + "&role=" + role + "&since=" + pollIndex,
@@ -623,6 +629,11 @@ async function pollSignals() {
     }
   } catch (err) {
     console.error("Poll error:", err);
+  } finally {
+    // Schedule next poll only after this one completes to prevent stacking
+    if (pc && !pollTimer) {
+      pollTimer = setTimeout(pollSignals, POLL_INTERVAL);
+    }
   }
 }
 

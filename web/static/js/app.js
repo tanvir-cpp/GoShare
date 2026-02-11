@@ -259,16 +259,20 @@ function upload(files, to, prefix) {
       abortBtn.classList.add("hidden");
       successBtn.classList.remove("hidden");
 
-      toast("Files sent! ✓");
+      showToast("Files sent! ✓");
       loadSharedFiles();
+      // Auto-close overlay after success
+      setTimeout(() => {
+        closeTransferOverlay();
+      }, 2000);
     } else {
-      toast("Upload failed: " + currentXhr.statusText);
+      showToast("Upload failed: " + currentXhr.statusText);
       closeTransferOverlay();
     }
   };
 
   currentXhr.onerror = () => {
-    toast("Upload failed!");
+    showToast("Upload failed!");
     closeTransferOverlay();
   };
 
@@ -475,6 +479,14 @@ function startLanUpload(isShared) {
   const prefix = isShared ? "shared" : "transfer";
   const to = isShared ? null : targetPeer;
   upload(uploadQueue, to, prefix);
+
+  // Close the triggering selection modal
+  if (isShared) {
+    document.getElementById("sharedOverlay").classList.remove("open");
+  } else {
+    document.getElementById("modalOverlay").classList.remove("open");
+  }
+
   uploadQueue = [];
   renderQueue(prefix);
 }
@@ -491,7 +503,7 @@ function respondToLan(accepted) {
         link.click();
       }, i * 500); // Stagger downloads to prevent browser blocking
     });
-    toast(`Downloading ${incomingFiles.length} file(s)...`);
+    showToast(`Downloading ${incomingFiles.length} file(s)...`);
     loadSharedFiles();
   }
   incomingFiles = [];
