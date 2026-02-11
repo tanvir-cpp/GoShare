@@ -3,17 +3,25 @@ FROM golang:1.24-bookworm AS builder
 
 WORKDIR /app
 
-# Copy all files
+# Copy dependency files first
+COPY go.mod ./
+# Download dependencies (even if none external, good practice)
+RUN go mod download
+
+# Copy the entire source code
 COPY . .
 
-# Build the application as a static binary
-# Using a unique name to avoid directory conflicts
+# Verification: List files to ensure copy worked (debug step)
+RUN ls -la && ls -la cmd/ && ls -la cmd/goshare/
+
+# Build the application
+# Use -v to see what packages are being compiled
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o goshare-app ./cmd/goshare
 
 # ─── Production Stage ───
 FROM alpine:latest
 
-# Security: Install certificates for any potential external triggers (WebRTC)
+# Security: Install certificates
 RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
