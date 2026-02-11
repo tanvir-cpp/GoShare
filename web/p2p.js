@@ -194,7 +194,7 @@ async function createRoom() {
       text: shareLink,
       width: 200,
       height: 200,
-      colorDark: "#a78bfa",
+      colorDark: "#ffffff",
       colorLight: "#09090b",
       correctLevel: QRCode.CorrectLevel.M,
     });
