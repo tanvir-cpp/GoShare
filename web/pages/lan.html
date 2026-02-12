@@ -34,19 +34,10 @@
       <a href="/pages/p2p.html">Global</a>
     </div>
 
-    <button onclick="changeName()" class="nav-profile-btn">
-      <div class="nav-user-info hidden-sm">
-        <div id="navUserName" class="nav-user-name">...</div>
-        <div class="nav-user-status">
-          Online <i class="fa-solid fa-circle" style="font-size: 7px;"></i>
-        </div>
-      </div>
-      <div class="nav-avatar-wrapper">
-        <div id="navUserIcon" class="nav-avatar"></div>
-        <div class="nav-edit-badge">
-          <i class="fa-solid fa-pen"></i>
-        </div>
-      </div>
+    <button onclick="changeName()" class="nav-profile-btn" title="Edit profile">
+      <span id="navUserIcon" class="nav-profile-emoji skeleton"></span>
+      <span id="navUserName" class="nav-profile-name skeleton">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+      <i class="fa-solid fa-pen nav-profile-edit"></i>
     </button>
   </nav>
 
@@ -54,7 +45,8 @@
   <main class="content-section app-entrance" style="text-align: center;">
     <header style="margin-bottom: 3rem;">
       <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Nearby Sharing</h1>
-      <p class="text-muted" style="font-weight: 400;">Share files with anyone on your local network</p>
+      <p class="text-muted" style="font-weight: 400;" aria-live="polite">Share files with anyone on your local network
+      </p>
     </header>
 
     <!-- Radar Area -->
@@ -76,12 +68,13 @@
     </div>
 
     <div class="text-center" style="margin-bottom: 1rem;">
-      <div id="deviceCount"
+      <div id="deviceCount" aria-live="polite"
         style="padding: 0.4rem 1rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.75rem; color: var(--text-dim); display: inline-block;">
         Searching...
       </div>
     </div>
-    <p class="text-dim" style="font-size: 0.85rem; text-align: center;">Devices running GoShare will appear here</p>
+    <p class="text-dim" style="font-size: 0.85rem; text-align: center;">Tap a device to send files • Drag & drop also
+      works</p>
 
     <div style="margin-top: 3.5rem; text-align: center;">
       <button onclick="openConnectModal()"
@@ -146,7 +139,7 @@
         <div style="text-align: center; margin-bottom: 1.5rem;">
           <h2 id="transferName"
             style="font-size: 1.25rem; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis;">Sending...</h2>
-          <p id="transferStage" class="text-muted" style="font-size: 0.9rem;">Starting transfer</p>
+          <p id="transferStage" class="text-muted" style="font-size: 0.9rem;" aria-live="polite">Starting transfer</p>
         </div>
 
         <div class="progress-container">

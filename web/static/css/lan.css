@@ -278,7 +278,7 @@
     display: flex;
     gap: 1rem;
     align-items: center;
-    z-index: 1000;
+    z-index: var(--z-nav);
     width: auto;
     max-width: 90vw;
     overflow-x: auto;
@@ -346,7 +346,7 @@
     position: fixed;
     bottom: 2.5rem;
     right: 2.5rem;
-    z-index: 1100;
+    z-index: var(--z-fab);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -384,5 +384,117 @@
 
     .action-fab span {
         display: none;
+    }
+}
+
+/* ── Drag-Active Visual Feedback ── */
+body.drag-active .peer-node {
+    animation: peer-drag-pulse 1.5s ease-in-out infinite;
+    border-color: rgba(37, 99, 235, 0.3);
+}
+
+body.drag-active .peer-node::before {
+    content: 'Drop to send';
+    position: absolute;
+    bottom: -1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+    opacity: 0;
+    animation: tooltip-fade 1.5s ease-in-out infinite;
+}
+
+@keyframes peer-drag-pulse {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        border-color: rgba(37, 99, 235, 0.15);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.08);
+        border-color: rgba(37, 99, 235, 0.4);
+    }
+}
+
+@keyframes tooltip-fade {
+
+    0%,
+    100% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Drop target — when hovering over a specific peer while dragging */
+.peer-node.drop-target {
+    border-color: var(--accent) !important;
+    background: rgba(37, 99, 235, 0.1) !important;
+    transform: translate(-50%, -50%) scale(1.18) !important;
+    box-shadow: 0 0 30px var(--accent-glow), 0 15px 45px rgba(0, 0, 0, 0.5) !important;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.peer-node.drop-target::before {
+    opacity: 1 !important;
+    animation: none !important;
+    color: #fff;
+}
+
+/* Keyboard focus ring for peer nodes */
+.peer-node:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: var(--z-peer-hover);
+    outline: none;
+}
+
+/* First-visit hint shown on empty radar */
+.radar-hint {
+    position: absolute;
+    top: 72%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+    animation: hint-pulse 3s ease-in-out infinite;
+}
+
+.radar-hint i {
+    font-size: 1.5rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+    display: block;
+    animation: hint-bounce 2s ease-in-out infinite;
+}
+
+@keyframes hint-bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes hint-pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
     }
 }

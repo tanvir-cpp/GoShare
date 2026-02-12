@@ -14,10 +14,17 @@ register().then(() => {
   connectSSE();
   loadSharedFiles();
   setupDragDrop();
+  setupGlobalDragFeedback();
   window.addEventListener("resize", renderPeers);
   window.addEventListener("beforeunload", () => {
     if (evtSource) evtSource.close();
   });
+  // Remove skeleton loading states
+  document.querySelectorAll(".skeleton").forEach(el => el.classList.remove("skeleton"));
+  // Request notification permission
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
 });
 
 async function register() {
@@ -109,6 +116,13 @@ function connectSSE() {
       incomingFiles[0] + (incomingFiles.length > 1 ? " and more..." : "");
     document.getElementById("notif").classList.add("notif-show");
     setTimeout(() => closeNotif(), 10000);
+    // Browser notification
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("GoShare — File Received", {
+        body: incomingFiles[0] + (incomingFiles.length > 1 ? " and " + (incomingFiles.length - 1) + " more" : ""),
+        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>",
+      });
+    }
   });
   evtSource.addEventListener("shared-update", () => loadSharedFiles());
   evtSource.onopen = () => { sseRetryCount = 0; };
@@ -154,6 +168,42 @@ function renderPeers() {
       <div style="font-size: 2.25rem; line-height: 1; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));">${getDeviceSvg(p.icon)}</div>
       <div class="peer-name">${escapeHtml(p.name)}</div>
     `;
+
+    // Keyboard accessibility
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", "Send files to " + p.name);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        el.click();
+      }
+    });
+
+    // Drag-and-drop on individual peer
+    el.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      el.classList.add("drop-target");
+    });
+    el.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      el.classList.add("drop-target");
+    });
+    el.addEventListener("dragleave", () => {
+      el.classList.remove("drop-target");
+    });
+    el.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove("drop-target");
+      document.body.classList.remove("drag-active");
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        targetPeer = p.id;
+        uploadQueue = files;
+        startLanUpload();
+      }
+    });
 
     el.onclick = () => {
       targetPeer = id;
@@ -586,5 +636,30 @@ function copyConnectUrl() {
   const url = document.getElementById("lanUrlText").textContent;
   navigator.clipboard.writeText(url).then(() => {
     showToast("URL copied!");
+  });
+}
+
+// Global drag feedback — highlights all peer nodes when files are dragged onto the page
+function setupGlobalDragFeedback() {
+  let dragCounter = 0;
+
+  document.addEventListener("dragenter", (e) => {
+    if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
+      dragCounter++;
+      document.body.classList.add("drag-active");
+    }
+  });
+
+  document.addEventListener("dragleave", () => {
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      document.body.classList.remove("drag-active");
+    }
+  });
+
+  document.addEventListener("drop", () => {
+    dragCounter = 0;
+    document.body.classList.remove("drag-active");
   });
 }

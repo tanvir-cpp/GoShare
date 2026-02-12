@@ -128,10 +128,13 @@ function updateIdentity() {
     // Update Navbar
     const navNameEl = document.getElementById("navUserName");
     const navIconEl = document.getElementById("navUserIcon");
-    if (navNameEl) navNameEl.textContent = name;
+    if (navNameEl) {
+        navNameEl.textContent = name;
+        navNameEl.classList.remove("skeleton");
+    }
     if (navIconEl) {
-        navIconEl.innerHTML = getDeviceSvg(name);
-        navIconEl.style.fontSize = "1.25rem";
+        navIconEl.textContent = getDeviceSvg(name);
+        navIconEl.classList.remove("skeleton");
     }
 
     // Specific for LAN page if exists

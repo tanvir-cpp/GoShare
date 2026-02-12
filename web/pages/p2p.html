@@ -29,19 +29,10 @@
       <a href="/pages/p2p.html" class="active">Global</a>
     </div>
 
-    <button onclick="changeName()" class="nav-profile-btn">
-      <div class="nav-user-info hidden-sm">
-        <div id="navUserName" class="nav-user-name">...</div>
-        <div class="nav-user-status">
-          Connected <i class="fa-solid fa-circle" style="font-size: 7px;"></i>
-        </div>
-      </div>
-      <div class="nav-avatar-wrapper">
-        <div id="navUserIcon" class="nav-avatar"></div>
-        <div class="nav-edit-badge">
-          <i class="fa-solid fa-pen"></i>
-        </div>
-      </div>
+    <button onclick="changeName()" class="nav-profile-btn" title="Edit profile">
+      <span id="navUserIcon" class="nav-profile-emoji skeleton"></span>
+      <span id="navUserName" class="nav-profile-name skeleton">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+      <i class="fa-solid fa-pen nav-profile-edit"></i>
     </button>
   </nav>
 
@@ -106,7 +97,7 @@
           From: <span id="remoteUserName" style="color: #fff; font-weight: 600;">Someone</span>
         </div>
         <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Secure Transfer</h1>
-        <p class="text-muted" style="font-weight: 400;">Encrypted direct connection established</p>
+        <p class="text-muted" style="font-weight: 400;" id="recvSubtext">Establishing encrypted connection...</p>
       </header>
 
       <div id="recvDefault"
@@ -118,8 +109,8 @@
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
         </div>
-        <p id="receiverFilesText" style="font-weight: 600; margin-bottom: 0.75rem; font-size: 1.1rem;">Files ready to
-          download</p>
+        <p id="receiverFilesText" style="font-weight: 600; margin-bottom: 0.75rem; font-size: 1.1rem;">Waiting for
+          files...</p>
         <div id="receiverStatus"
           style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
           <div
@@ -160,7 +151,7 @@
           <h2 id="transferName"
             style="font-size: 1.25rem; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis;">Synchronizing...
           </h2>
-          <p id="transferStage" class="text-muted" style="font-size: 0.9rem;">Connecting...</p>
+          <p id="transferStage" class="text-muted" style="font-size: 0.9rem;" aria-live="polite">Connecting...</p>
         </div>
 
         <div class="progress-container">

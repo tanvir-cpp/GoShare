@@ -48,6 +48,10 @@ let serverIp = window.location.hostname;
     setupFileInput();
     updateIdentity();
   }
+  // Request notification permission
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
 })();
 
 // deviceIcons and getDeviceSvg removed (now in shared.js)
@@ -410,6 +414,12 @@ async function sendFile() {
   if (iconBox) iconBox.innerHTML = `<svg style="width: 40px; height: 40px; color: #fff;" class="check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
   abortBtn.classList.add("hidden");
   successBtn.classList.remove("hidden");
+  // Browser notification for sender
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("GoShare — Transfer Complete", {
+      body: "All files sent successfully!",
+    });
+  }
 
   isTransferring = false;
   stopPolling();
@@ -470,6 +480,11 @@ async function startReceiver() {
       statusEl.style.color = "var(--success)";
       statusEl.innerHTML = '<div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div> Stable Connection';
     }
+    // Update header text
+    const subtext = document.getElementById("recvSubtext");
+    if (subtext) subtext.textContent = "Encrypted direct connection established";
+    const filesText = document.getElementById("receiverFilesText");
+    if (filesText) filesText.textContent = "Files ready to download";
 
     dataChannel.onmessage = (event) => {
       // First message for a file is metadata (JSON string)
@@ -525,6 +540,12 @@ async function startReceiver() {
           abortBtn.classList.add("hidden");
           successBtn.classList.remove("hidden");
           stopPolling();
+          // Browser notification for receiver
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("GoShare — Files Received", {
+              body: currentFileMeta.total + " file(s) received successfully!",
+            });
+          }
         }
 
         const a = document.createElement("a");
