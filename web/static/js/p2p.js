@@ -4,6 +4,9 @@ const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:global.stun.twilio.com:3478" },
 ];
 const POLL_INTERVAL = 800; // ms
 
@@ -20,6 +23,8 @@ let transferStartTime = 0;
 let abortCurrentTransfer = false;
 let isTransferring = false;
 let serverIp = window.location.hostname;
+let isPollingActive = false;
+let hasReceivedAnswer = false;
 
 // ─── Init ───
 (async function init() {
@@ -145,6 +150,9 @@ function showSelectedFile() {
 
   document.getElementById("fileSelectArea").classList.add("hidden");
   document.getElementById("selectedFile").classList.remove("hidden");
+
+  // Check if we are already connected and should send the request immediately
+  checkAndSendRequest();
 }
 
 function removeFile(index) {
@@ -218,6 +226,26 @@ async function createRoom() {
   }
 }
 
+function checkAndSendRequest() {
+  if (
+    pc &&
+    (pc.iceConnectionState === "connected" ||
+      pc.iceConnectionState === "completed") &&
+    selectedFiles.length > 0
+  ) {
+    const manifest = {
+      sender: localStorage.getItem("user_name") || "Anonymous",
+      files: selectedFiles.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+      })),
+    };
+    sendSignal("transfer-request", manifest);
+    showToast("Sent transfer request to receiver");
+  }
+}
+
 function setupSenderConnection() {
   pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -253,20 +281,13 @@ function setupSenderConnection() {
       pc.iceConnectionState === "completed"
     ) {
       document.getElementById("waitingStatus").innerHTML =
-        '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></div> <span class="text-success">Someone joined!</span>';
+        '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></div> <span class="text-success">Device connected!</span>';
 
       // Send transfer request after connection if files are selected
-      if (selectedFiles.length > 0) {
-        const manifest = {
-          sender: localStorage.getItem("user_name") || "Anonymous",
-          files: selectedFiles.map((f) => ({
-            name: f.name,
-            size: f.size,
-            type: f.type,
-          })),
-        };
-        sendSignal("transfer-request", manifest);
-      }
+      checkAndSendRequest();
+    } else if (pc.iceConnectionState === "failed") {
+      document.getElementById("waitingStatus").innerHTML =
+        '<div style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger);"></div> <span class="text-danger">Connection failed</span> <button onclick="restartConnection()" style="margin-left: 10px; padding: 2px 8px; font-size: 0.75rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">Retry</button>';
     }
   };
 
@@ -279,6 +300,21 @@ function setupSenderConnection() {
       startPolling();
     })
     .catch((err) => console.error("Offer error:", err));
+}
+
+async function restartConnection() {
+  const btn = document.getElementById("waitingStatus");
+  if (btn) btn.innerHTML = '<div style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite;"></div> Restarting...';
+
+  // Clean up old connection before restarting
+  if (pc) {
+    pc.close();
+    pc = null;
+  }
+  dataChannel = null;
+  hasReceivedAnswer = false;
+  pendingCandidates = [];
+  setupSenderConnection();
 }
 
 // ─── Sender: Send Files via DataChannel ───
@@ -318,87 +354,108 @@ async function sendFile() {
 
   transferStartTime = Date.now();
 
-  for (let i = 0; i < selectedFiles.length; i++) {
-    if (abortCurrentTransfer) break;
-    const file = selectedFiles[i];
-    nameEl.textContent = file.name;
-    stageEl.textContent = `Preparing file ${i + 1} of ${selectedFiles.length}...`;
+  try {
+    for (let i = 0; i < selectedFiles.length; i++) {
+      if (abortCurrentTransfer) break;
+      const file = selectedFiles[i];
+      nameEl.textContent = file.name;
+      stageEl.textContent = `Preparing file ${i + 1} of ${selectedFiles.length}...`;
 
-    // Send metadata for this file
-    dataChannel.send(
-      JSON.stringify({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        index: i,
-        total: selectedFiles.length,
-      }),
-    );
+      // Send metadata for this file
+      dataChannel.send(
+        JSON.stringify({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          index: i,
+          total: selectedFiles.length,
+        }),
+      );
 
-    await new Promise((resolve, reject) => {
-      const fileReader = new FileReader();
-      let offset = 0;
+      await new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        let offset = 0;
 
-      function updateProgress() {
-        const now = Date.now();
-        const duration = Math.max(0.1, (now - transferStartTime) / 1000); // Guard against div-by-zero
-        const speed = offset / duration;
-        const remainingBytes = file.size - offset;
-        const eta = remainingBytes / speed;
+        function updateProgress() {
+          const now = Date.now();
+          const duration = Math.max(0.1, (now - transferStartTime) / 1000); // Guard against div-by-zero
+          const speed = offset / duration;
+          const remainingBytes = file.size - offset;
+          const eta = remainingBytes / speed;
 
-        const percent = Math.min(100, Math.round((offset / file.size) * 100));
-        bar.style.width = percent + "%";
-        percentEl.textContent = percent + "%";
-        speedEl.textContent = formatBytes(speed) + "/s";
-        stageEl.textContent = "Sending your files...";
+          const percent = Math.min(100, Math.round((offset / file.size) * 100));
+          bar.style.width = percent + "%";
+          percentEl.textContent = percent + "%";
+          speedEl.textContent = formatBytes(speed) + "/s";
+          stageEl.textContent = "Sending your files...";
 
-        if (eta > 0 && eta < 3600) {
-          const mins = Math.floor(eta / 60);
-          const secs = Math.floor(eta % 60);
-          etaEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
-        } else {
-          etaEl.textContent = "--:--";
-        }
-      }
-
-      function sendNextChunk() {
-        if (abortCurrentTransfer) return reject("Aborted");
-        if (dataChannel.readyState !== "open") return reject("Channel closed");
-
-        if (offset >= file.size) {
-          dataChannel.send("__EOF__");
-          resolve();
-          return;
+          if (eta > 0 && eta < 3600) {
+            const mins = Math.floor(eta / 60);
+            const secs = Math.floor(eta % 60);
+            etaEl.textContent = `${mins}:${secs.toString().padStart(2, "0")}`;
+          } else {
+            etaEl.textContent = "--:--";
+          }
         }
 
-        if (dataChannel.bufferedAmount > BUFFER_HIGH) {
-          dataChannel.onbufferedamountlow = () => {
-            dataChannel.onbufferedamountlow = null;
-            readAndSend();
-          };
-          return;
+        function sendNextChunk() {
+          if (abortCurrentTransfer) return reject("Aborted");
+          if (!dataChannel || dataChannel.readyState !== "open") return reject("Channel closed");
+
+          if (offset >= file.size) {
+            dataChannel.send("__EOF__");
+            resolve();
+            return;
+          }
+
+          if (dataChannel.bufferedAmount > BUFFER_HIGH) {
+            dataChannel.onbufferedamountlow = () => {
+              dataChannel.onbufferedamountlow = null;
+              readAndSend();
+            };
+            return;
+          }
+          readAndSend();
         }
-        readAndSend();
-      }
 
-      function readAndSend() {
-        const slice = file.slice(offset, offset + CHUNK_SIZE);
-        fileReader.readAsArrayBuffer(slice);
-      }
+        function readAndSend() {
+          const slice = file.slice(offset, offset + CHUNK_SIZE);
+          fileReader.readAsArrayBuffer(slice);
+        }
 
-      fileReader.onload = (e) => {
-        dataChannel.send(e.target.result);
-        offset += e.target.result.byteLength;
-        updateProgress();
+        fileReader.onload = (e) => {
+          if (!dataChannel || dataChannel.readyState !== "open") {
+            reject("Channel closed");
+            return;
+          }
+          dataChannel.send(e.target.result);
+          offset += e.target.result.byteLength;
+          updateProgress();
+          sendNextChunk();
+        };
+
+        fileReader.onerror = () => reject("File read error");
         sendNextChunk();
-      };
-
-      fileReader.onerror = () => reject("File read error");
-      sendNextChunk();
-    });
+      });
+    }
+  } catch (err) {
+    console.error("Transfer error:", err);
+    isTransferring = false;
+    if (abortCurrentTransfer || err === "Aborted") {
+      closeTransferOverlay();
+      return;
+    }
+    // Show error state on the overlay
+    stageEl.textContent = "Transfer failed: " + err;
+    if (iconBox) iconBox.classList.add("error");
+    abortBtn.classList.add("hidden");
+    successBtn.classList.remove("hidden");
+    successBtn.textContent = "Close";
+    return;
   }
 
   if (abortCurrentTransfer) {
+    isTransferring = false;
     closeTransferOverlay();
     return;
   }
@@ -630,11 +687,13 @@ function sendSignal(type, data) {
 
 function startPolling() {
   stopPolling(); // Clear any existing
+  isPollingActive = true;
   pollIndex = 0;
   pollSignals();
 }
 
 function stopPolling() {
+  isPollingActive = false;
   if (pollTimer) {
     clearTimeout(pollTimer);
     pollTimer = null;
@@ -642,6 +701,7 @@ function stopPolling() {
 }
 
 async function pollSignals() {
+  if (!isPollingActive) return;
   if (pollTimer) clearTimeout(pollTimer);
   try {
     const res = await fetch(
@@ -664,8 +724,8 @@ async function pollSignals() {
   } catch (err) {
     console.error("Poll error:", err);
   } finally {
-    // Schedule next poll only after this one completes to prevent stacking
-    if (pc && !pollTimer) {
+    // Schedule next poll only if still active
+    if (isPollingActive && pc) {
       pollTimer = setTimeout(pollSignals, POLL_INTERVAL);
     }
   }
@@ -694,6 +754,11 @@ async function handleSignal(signal) {
       await pc.setLocalDescription(answer);
       sendSignal("answer", pc.localDescription);
     } else if (signal.type === "answer" && role === "sender") {
+      if (hasReceivedAnswer) {
+        console.warn("Ignoring duplicate/second answer.");
+        return;
+      }
+      hasReceivedAnswer = true;
       await pc.setRemoteDescription(new RTCSessionDescription(signal.data));
       // Process any ICE candidates that arrived before the answer
       for (const c of pendingCandidates) {
@@ -744,8 +809,11 @@ function resetSender() {
   roomId = null;
   selectedFiles = [];
   isTransferring = false;
+  transferAccepted = false;
+  hasReceivedAnswer = false;
   pollIndex = 0;
   pendingCandidates = [];
+  abortCurrentTransfer = false;
   stopPolling();
 
   document.getElementById("shareInfo").classList.add("hidden");
@@ -754,8 +822,10 @@ function resetSender() {
   document.getElementById("fileInput").value = "";
 
   const btn = document.getElementById("shareBtn");
-  btn.disabled = false;
-  btn.textContent = "Create share link";
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "Create share link";
+  }
   closeTransferOverlay();
 }
 
@@ -764,9 +834,9 @@ function closeTransferOverlay() {
   const card = document.getElementById("transferCard");
   const iconBox = document.getElementById("transferIcon");
   if (iconBox) iconBox.classList.remove("success", "error");
-  card.classList.add("scale-95", "opacity-0");
+  if (card) card.classList.add("scale-95", "opacity-0");
   setTimeout(() => {
-    overlay.classList.remove("open");
+    if (overlay) overlay.classList.remove("open");
     if (iconBox) iconBox.classList.remove("bg-success", "border-success", "success-ring");
   }, 300);
 }
