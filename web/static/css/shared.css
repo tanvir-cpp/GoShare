@@ -78,12 +78,20 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+    overflow-x: hidden;
+}
+
 body {
     background: var(--bg);
     color: var(--text-main);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     line-height: 1.5;
     overflow-x: hidden;
+    max-width: 100vw;
     min-height: 100vh;
 }
 
