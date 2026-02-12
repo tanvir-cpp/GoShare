@@ -31,7 +31,8 @@ var (
 	p2pRooms = make(map[string]*P2PRoom)
 )
 
-func init() {
+// StartP2PCleanup starts the background goroutine that cleans up expired P2P rooms.
+func StartP2PCleanup() {
 	go cleanupP2PRooms()
 }
 

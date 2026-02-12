@@ -1,10 +1,9 @@
 const myId =
     localStorage.getItem("device_id") ||
     (() => {
-        const id =
-            "dev_" +
-            Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15);
+        const arr = new Uint8Array(16);
+        crypto.getRandomValues(arr);
+        const id = "dev_" + Array.from(arr, b => b.toString(16).padStart(2, "0")).join("");
         localStorage.setItem("device_id", id);
         return id;
     })();
@@ -66,13 +65,14 @@ function getDeviceSvg(iconNameOrName) {
     // If it's a known icon name, return it
     if (deviceIcons[iconNameOrName]) return deviceIcons[iconNameOrName];
 
-    // Otherwise, seed from the string (name) to pick a consistent icon
-    const seed = Array.from(iconNameOrName).reduce(
-        (acc, char) => acc + char.charCodeAt(0),
-        0,
-    );
+    // FNV-1a hash for better distribution (avoids collisions like "ab" vs "ba")
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < iconNameOrName.length; i++) {
+        hash ^= iconNameOrName.charCodeAt(i);
+        hash = (hash * 0x01000193) >>> 0;
+    }
     const keys = Object.keys(deviceIcons);
-    return deviceIcons[keys[seed % keys.length]];
+    return deviceIcons[keys[hash % keys.length]];
 }
 
 function formatBytes(bytes) {
@@ -95,10 +95,28 @@ function showToast(msg) {
     }, 2000);
 }
 
-// Unified modal close logic helpers
-function closeModal() {
-    const overlays = document.querySelectorAll(".modal-overlay");
-    overlays.forEach((o) => o.classList.remove("open"));
+// XSS prevention helper
+function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Copy URL to clipboard (works on both LAN and P2P pages)
+function copyUrl() {
+    const urlEl = document.getElementById("shareUrl");
+    const url = urlEl ? urlEl.textContent : window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast("URL copied to clipboard!");
+    }).catch(() => {
+        const input = document.createElement("input");
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        showToast("URL copied!");
+    });
 }
 
 function updateIdentity() {

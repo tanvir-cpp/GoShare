@@ -36,6 +36,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var nameUpdated bool
 	discovery.Lock.Lock()
 	dev, ok := discovery.Devices[id]
 	if !ok {
@@ -57,14 +58,17 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		if body.Name != "" && body.Name != dev.Name {
 			dev.Name = body.Name
 			log.Printf("Device Name Updated: %s (%s)", dev.Name, id)
-			discovery.Lock.Unlock()
-			discovery.Broadcast("device-joined", dev, id)
-			discovery.Lock.Lock()
+			nameUpdated = true
 		}
 		dev.LastSeen = time.Now()
 		dev.IP = r.RemoteAddr
 	}
 	discovery.Lock.Unlock()
+
+	// Broadcast outside the lock to prevent race conditions
+	if nameUpdated {
+		discovery.Broadcast("device-joined", dev, id)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(dev)
@@ -134,6 +138,7 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 	// Cleanup on disconnect.
 	defer func() {
 		discovery.Lock.Lock()
+		shouldBroadcastLeft := false
 		if dev, ok := discovery.Devices[id]; ok {
 			for i, qq := range dev.Queues {
 				if qq == q {
@@ -141,10 +146,16 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 			}
+			// Only broadcast device-left when ALL SSE connections are gone
+			if len(dev.Queues) == 0 {
+				shouldBroadcastLeft = true
+			}
 		}
 		discovery.Lock.Unlock()
 		log.Printf("SSE Disconnected: %s", id)
-		discovery.Broadcast("device-left", map[string]string{"id": id}, id)
+		if shouldBroadcastLeft {
+			discovery.Broadcast("device-left", map[string]string{"id": id}, id)
+		}
 	}()
 
 	ticker := time.NewTicker(20 * time.Second)
@@ -183,9 +194,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	uploadDir := filepath.Join(SharedDir, "public")
 	if rawTo != "" {
 		toID = filepath.Base(rawTo)
-
-		// Security: Ensure toID is a valid alphanumeric device ID to prevent path traversal
-		if len(toID) < 5 || strings.ContainsAny(toID, "./\\") {
+		if !isValidName(toID) || len(toID) < 5 {
 			http.Error(w, "invalid destination", 400)
 			return
 		}
@@ -272,10 +281,16 @@ func HandleListFiles(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// isValidName checks if a filename or ID is safe for filesystem use.
+func isValidName(name string) bool {
+	return name != "" && name != "." && name != ".." &&
+		!strings.ContainsAny(name, "/\\:*?\"<>|")
+}
+
 // HandleDelete removes a file from the public shared directory.
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Base(r.URL.Path)
-	if name == "." || name == "/" || name == "" {
+	if !isValidName(name) {
 		http.Error(w, "invalid filename", 400)
 		return
 	}
@@ -292,9 +307,13 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) {
 // HandleDownload serves a file (private first, then public fallback).
 func HandleDownload(w http.ResponseWriter, r *http.Request) {
 	name := filepath.Base(r.URL.Path)
+	if !isValidName(name) {
+		http.Error(w, "invalid filename", 400)
+		return
+	}
 	myID := filepath.Base(r.URL.Query().Get("id"))
 
-	if myID != "" && myID != "." && myID != "\\" && myID != "/" {
+	if myID != "" && isValidName(myID) {
 		privatePath := filepath.Join(SharedDir, "private", myID, name)
 		if _, err := os.Stat(privatePath); err == nil {
 			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", name))

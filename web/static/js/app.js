@@ -7,13 +7,17 @@ let peers = {},
   serverIp = window.location.hostname,
   currentXhr = null,
   transferStartTime = 0,
-  abortCurrentTransfer = false;
+  abortCurrentTransfer = false,
+  sseRetryCount = 0;
 
 register().then(() => {
   connectSSE();
   loadSharedFiles();
   setupDragDrop();
   window.addEventListener("resize", renderPeers);
+  window.addEventListener("beforeunload", () => {
+    if (evtSource) evtSource.close();
+  });
 });
 
 async function register() {
@@ -104,9 +108,15 @@ function connectSSE() {
     document.getElementById("notifSub").textContent =
       incomingFiles[0] + (incomingFiles.length > 1 ? " and more..." : "");
     document.getElementById("notif").classList.add("notif-show");
+    setTimeout(() => closeNotif(), 10000);
   });
   evtSource.addEventListener("shared-update", () => loadSharedFiles());
-  evtSource.onerror = () => setTimeout(connectSSE, 3000);
+  evtSource.onopen = () => { sseRetryCount = 0; };
+  evtSource.onerror = () => {
+    sseRetryCount++;
+    const delay = Math.min(3000 * Math.pow(1.5, sseRetryCount - 1), 30000);
+    setTimeout(connectSSE, delay);
+  };
 }
 
 function renderPeers() {
@@ -142,7 +152,7 @@ function renderPeers() {
 
     el.innerHTML = `
       <div style="font-size: 2.25rem; line-height: 1; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));">${getDeviceSvg(p.icon)}</div>
-      <div class="peer-name">${p.name}</div>
+      <div class="peer-name">${escapeHtml(p.name)}</div>
     `;
 
     el.onclick = () => {
@@ -314,9 +324,10 @@ async function loadSharedFiles() {
     bar.innerHTML = '<!-- File chips will be dynamically added here -->';
 
     if (!files || !Array.isArray(files) || files.length === 0) {
-      bar.innerHTML = '<div style="padding: 0.5rem 1rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 500; opacity: 0.6;">No shared files visible right now</div>';
+      bar.style.display = "none";
       return;
     }
+    bar.style.display = "";
 
     bar.classList.remove("hidden");
     files.forEach((f) => {
@@ -324,17 +335,19 @@ async function loadSharedFiles() {
       chip.className = "file-chip";
       chip.style.cssText = "flex-shrink: 0; display: flex; align-items: center; gap: 0.75rem; background: var(--surface-light); border: 1px solid var(--border); border-radius: var(--radius-full); padding: 0.5rem 1rem; cursor: pointer; transition: all 0.2s;";
       chip.title = "Download " + f.name;
+      const safeName = escapeHtml(f.name);
       chip.innerHTML = `
         <span style="color: var(--accent); display: flex; font-size: 14px;">
           <i class="fa-solid fa-file"></i>
         </span>
         <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; font-weight: 500;">
-          ${f.name}
+          ${safeName}
         </div>
-        <span style="color: var(--text-dim); font-size: 1.25rem; font-weight: 300; line-height: 1;" onclick="event.stopPropagation();delFile('${f.name}')">×</span>
+        <span style="color: var(--text-dim); font-size: 1.25rem; font-weight: 300; line-height: 1;" onclick="event.stopPropagation();delFile(this)">×</span>
       `;
+      chip.dataset.filename = f.name;
       chip.onclick = () =>
-        (location.href = "/download/" + f.name + "?id=" + myId);
+        (location.href = "/download/" + encodeURIComponent(f.name) + "?id=" + myId);
       bar.appendChild(chip);
     });
   } catch (e) {
@@ -342,12 +355,15 @@ async function loadSharedFiles() {
   }
 }
 
-async function delFile(n) {
-  await fetch("/api/delete/" + n, { method: "DELETE" });
+async function delFile(el) {
+  const chip = el.closest('.file-chip');
+  const name = chip ? chip.dataset.filename : '';
+  if (!name || !confirm('Delete "' + name + '"?')) return;
+  await fetch("/api/delete/" + encodeURIComponent(name), { method: "DELETE" });
   loadSharedFiles();
 }
 function downloadNotifFile() {
-  if (notifFile) location.href = "/download/" + notifFile + "?id=" + myId;
+  if (notifFile) location.href = "/download/" + encodeURIComponent(notifFile) + "?id=" + myId;
   closeNotif();
 }
 function closeNotif() {
@@ -446,7 +462,7 @@ function renderQueue(prefix) {
       item.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.75rem; max-width: 80%;">
           <i class="fa-solid fa-file" style="color: var(--accent); opacity: 0.7;"></i>
-          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.name}</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(f.name)}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <span style="color: var(--text-dim); font-size: 0.7rem;">${formatBytes(f.size)}</span>
@@ -467,10 +483,11 @@ function renderQueue(prefix) {
     sendBtn.classList.add("hidden");
     // Reset dropArea
     dropArea.style.padding = "2.5rem 1.5rem";
-    dropArea.querySelector("i").style.fontSize = "32px";
-    dropArea.querySelector("i").style.marginBottom = "1rem";
-    dropArea.querySelectorAll("div")[0].style.fontSize = "0.9rem";
-    dropArea.querySelectorAll("div")[1].style.fontSize = "0.75rem";
+    const icon = dropArea.querySelector("i");
+    if (icon) { icon.style.fontSize = "32px"; icon.style.marginBottom = "1rem"; }
+    const divs = dropArea.querySelectorAll("div");
+    if (divs[0]) divs[0].style.fontSize = "0.9rem";
+    if (divs[1]) divs[1].style.fontSize = "0.75rem";
   }
 }
 
@@ -498,7 +515,7 @@ function respondToLan(accepted) {
     incomingFiles.forEach((name, i) => {
       setTimeout(() => {
         const link = document.createElement("a");
-        link.href = "/download/" + name + "?id=" + myId;
+        link.href = "/download/" + encodeURIComponent(name) + "?id=" + myId;
         link.download = name;
         link.click();
       }, i * 500); // Stagger downloads to prevent browser blocking
@@ -544,14 +561,18 @@ async function openConnectModal() {
   urlText.textContent = fullUrl;
 
   qrEl.innerHTML = "";
-  new QRCode(qrEl, {
-    text: fullUrl,
-    width: 160,
-    height: 160,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.M,
-  });
+  try {
+    new QRCode(qrEl, {
+      text: fullUrl,
+      width: 160,
+      height: 160,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  } catch (e) {
+    qrEl.innerHTML = '<div style="padding: 1rem; color: var(--text-dim); font-size: 0.85rem;">QR code unavailable</div>';
+  }
 
   modal.classList.add("open");
 }
@@ -566,22 +587,4 @@ function copyConnectUrl() {
   navigator.clipboard.writeText(url).then(() => {
     showToast("URL copied!");
   });
-}
-function copyUrl() {
-  const url = window.location.href;
-  navigator.clipboard
-    .writeText(url)
-    .then(() => {
-      showToast("URL copied to clipboard!");
-    })
-    .catch(() => {
-      // Fallback for older browsers
-      const input = document.createElement("input");
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-      showToast("URL copied!");
-    });
 }

@@ -93,14 +93,14 @@ function setupFileInput() {
   ["dragenter", "dragover"].forEach((evt) =>
     dropArea.addEventListener(
       evt,
-      () => dropArea.classList.add("border-accent", "bg-accent/5"),
+      () => dropArea.classList.add("dragover"),
       false,
     ),
   );
   ["dragleave", "drop"].forEach((evt) =>
     dropArea.addEventListener(
       evt,
-      () => dropArea.classList.remove("border-accent", "bg-accent/5"),
+      () => dropArea.classList.remove("dragover"),
       false,
     ),
   );
@@ -127,7 +127,7 @@ function showSelectedFile() {
     item.style.cssText = "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;";
     item.innerHTML = `
       <div style="flex: 1; overflow: hidden;">
-        <div style="font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</div>
+        <div style="font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(file.name)}</div>
         <div style="color: var(--text-dim); font-size: 0.75rem;">${formatBytes(file.size)}</div>
       </div>
       <button onclick="removeFile(${index})" style="background: transparent; color: var(--text-dim); font-size: 1.5rem; line-height: 1; padding: 0 0.5rem;">&times;</button>
@@ -184,19 +184,23 @@ async function createRoom() {
       base = `${window.location.protocol}//${serverIp}${port}`;
     }
 
-    const shareLink = base + "/p2p.html?room=" + roomId;
+    const shareLink = base + "/pages/p2p.html?room=" + roomId;
     document.getElementById("shareUrl").textContent = shareLink;
 
     const qrEl = document.getElementById("qrcode");
     qrEl.innerHTML = "";
-    new QRCode(qrEl, {
-      text: shareLink,
-      width: 200,
-      height: 200,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M,
-    });
+    try {
+      new QRCode(qrEl, {
+        text: shareLink,
+        width: 160,
+        height: 160,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    } catch (e) {
+      qrEl.innerHTML = '<div style="padding: 1rem; color: var(--text-dim); font-size: 0.85rem;">QR code unavailable</div>';
+    }
 
     document.getElementById("shareInfo").classList.remove("hidden");
     btn.textContent = "Link created!";
@@ -402,7 +406,7 @@ async function sendFile() {
   speedEl.textContent = "Done";
   etaEl.textContent = "0:00";
 
-  iconBox.classList.add("bg-success", "border-success", "success-ring");
+  if (iconBox) iconBox.classList.add("success");
   if (iconBox) iconBox.innerHTML = `<svg style="width: 40px; height: 40px; color: #fff;" class="check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
   abortBtn.classList.add("hidden");
   successBtn.classList.remove("hidden");
@@ -460,6 +464,13 @@ async function startReceiver() {
     dataChannel = e.channel;
     dataChannel.binaryType = "arraybuffer";
 
+    // Update receiver status to show connection is established
+    const statusEl = document.getElementById("receiverStatus");
+    if (statusEl) {
+      statusEl.style.color = "var(--success)";
+      statusEl.innerHTML = '<div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div> Stable Connection';
+    }
+
     dataChannel.onmessage = (event) => {
       // First message for a file is metadata (JSON string)
       if (typeof event.data === "string" && event.data !== "__EOF__") {
@@ -483,7 +494,7 @@ async function startReceiver() {
           bar.style.width = "0%";
           abortBtn.classList.remove("hidden");
           successBtn.classList.add("hidden");
-          iconBox.classList.remove("bg-success", "border-success", "success-ring");
+          if (iconBox) iconBox.classList.remove("success", "error");
           if (iconBox) iconBox.innerHTML = `<svg style="width: 32px; height: 32px; color: var(--text-dim);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>`;
 
           overlay.classList.add("open");
@@ -502,6 +513,7 @@ async function startReceiver() {
         const stageEl = document.getElementById("transferStage");
         const bar = document.getElementById("transferBar");
         const iconBox = document.getElementById("transferIcon");
+        if (iconBox) iconBox.classList.add("success");
         const abortBtn = document.getElementById("abortBtn");
         const successBtn = document.getElementById("successCloseBtn");
 
@@ -509,7 +521,6 @@ async function startReceiver() {
           // All files complete
           stageEl.textContent = "All files received!";
           bar.style.width = "100%";
-          iconBox.classList.add("bg-success", "border-success", "success-ring");
           if (iconBox) iconBox.innerHTML = `<svg style="width: 40px; height: 40px; color: #fff;" class="check-animate" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
           abortBtn.classList.add("hidden");
           successBtn.classList.remove("hidden");
@@ -520,7 +531,7 @@ async function startReceiver() {
         a.href = url;
         a.download = currentFileMeta.name;
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000); // Extend to 5 minutes
         return;
       }
 
@@ -578,6 +589,8 @@ function showRecvError(msg) {
   document.getElementById("recvConnecting").classList.add("hidden");
   document.getElementById("recvError").classList.remove("hidden");
   if (msg) document.getElementById("recvErrorMsg").textContent = msg;
+  const iconBox = document.getElementById("transferIcon");
+  if (iconBox) iconBox.classList.add("error");
 }
 
 // ─── Signaling: Send & Poll ───
@@ -680,7 +693,7 @@ async function handleSignal(signal) {
       const count = files.length;
       const totalSize = files.reduce((sum, f) => sum + f.size, 0);
       document.getElementById("requestInfo").textContent =
-        `${sender} wants to share ${count} file(s) (${formatBytes(totalSize)})`;
+        `${escapeHtml(sender)} wants to share ${count} file(s) (${formatBytes(totalSize)})`;
       document.getElementById("requestModal").classList.add("open");
     } else if (signal.type === "transfer-response") {
       if (signal.data.accepted) {
@@ -729,7 +742,7 @@ function closeTransferOverlay() {
   const overlay = document.getElementById("transferOverlay");
   const card = document.getElementById("transferCard");
   const iconBox = document.getElementById("transferIcon");
-
+  if (iconBox) iconBox.classList.remove("success", "error");
   card.classList.add("scale-95", "opacity-0");
   setTimeout(() => {
     overlay.classList.remove("open");

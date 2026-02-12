@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -31,7 +32,9 @@ func main() {
 	}
 
 	handler.SharedDir = sharedPath
-	os.MkdirAll(sharedPath, 0755)
+	if err := os.MkdirAll(sharedPath, 0755); err != nil {
+		log.Fatalf("Failed to create shared directory %s: %v", sharedPath, err)
+	}
 
 	// Static file server — serves from web/pages for HTML, web/static for assets.
 	staticFS := http.FileServer(http.Dir("web"))
@@ -39,6 +42,7 @@ func main() {
 
 	// Background cleanup of stale devices.
 	go discovery.CleanupStale()
+	handler.StartP2PCleanup()
 
 	// Start the server.
 	ip := network.GetLocalIP()

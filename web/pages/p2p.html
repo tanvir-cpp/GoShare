@@ -3,11 +3,13 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Global Sharing — GoShare</title>
   <meta name="description" content="Send files to anyone across the world with an encrypted link" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
   <link rel="stylesheet" href="/static/css/shared.css" />
   <link rel="stylesheet" href="/static/css/p2p.css" />
 </head>
@@ -27,7 +29,7 @@
       <a href="/pages/p2p.html" class="active">Global</a>
     </div>
 
-        <button onclick="changeName()" class="nav-profile-btn">
+    <button onclick="changeName()" class="nav-profile-btn">
       <div class="nav-user-info hidden-sm">
         <div id="navUserName" class="nav-user-name">...</div>
         <div class="nav-user-status">
@@ -119,9 +121,11 @@
         <p id="receiverFilesText" style="font-weight: 600; margin-bottom: 0.75rem; font-size: 1.1rem;">Files ready to
           download</p>
         <div id="receiverStatus"
-          style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--success);">
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
-          Stable Connection
+          style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-dim);">
+          <div
+            style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite;">
+          </div>
+          Connecting...
         </div>
       </div>
 
@@ -144,6 +148,14 @@
   <div class="modal-overlay" id="transferOverlay" style="background: var(--bg);">
     <div class="modal-content" style="border: none; background: transparent; box-shadow: none;">
       <div id="transferCard">
+        <div id="transferIcon"
+          style="width: 64px; height: 64px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+          <svg style="width: 32px; height: 32px; color: var(--text-dim);" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" />
+          </svg>
+        </div>
         <div style="text-align: center; margin-bottom: 2rem;">
           <h2 id="transferName"
             style="font-size: 1.25rem; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis;">Synchronizing...
@@ -220,6 +232,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-nav">
+    <a href="/">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </a>
+    <a href="/pages/lan.html">
+      <i class="fa-solid fa-wifi"></i>
+      <span>Nearby</span>
+    </a>
+    <a href="/pages/p2p.html" class="active">
+      <i class="fa-solid fa-globe"></i>
+      <span>Global</span>
+    </a>
+  </nav>
 
   <footer style="margin-top: 8rem; border-top: 1px solid var(--border); padding: 4rem 1.5rem; text-align: center;">
     <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem;">

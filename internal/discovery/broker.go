@@ -9,7 +9,11 @@ import (
 
 // Broadcast sends an SSE event to all connected devices except excludeID.
 func Broadcast(eventType string, data interface{}, excludeID string) {
-	msg, _ := json.Marshal(data)
+	msg, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("Failed to marshal broadcast data: %v", err)
+		return
+	}
 	sseMsg := []byte(fmt.Sprintf("event: %s\ndata: %s\n\n", eventType, msg))
 
 	Lock.RLock()
@@ -33,7 +37,11 @@ func Broadcast(eventType string, data interface{}, excludeID string) {
 
 // Notify sends an SSE event to a single device by ID.
 func Notify(id string, eventType string, data interface{}) {
-	msg, _ := json.Marshal(data)
+	msg, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("Failed to marshal notify data: %v", err)
+		return
+	}
 	sseMsg := []byte(fmt.Sprintf("event: %s\ndata: %s\n\n", eventType, msg))
 
 	Lock.RLock()

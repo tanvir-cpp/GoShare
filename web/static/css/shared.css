@@ -304,7 +304,7 @@ a {
 }
 
 .text-dim {
-    color: var(--text-dim);
+    color: var(--text-dim) !important;
 }
 
 .content-section {
@@ -337,14 +337,7 @@ a {
     }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .nav-switcher {
-        display: none;
-    }
 
-    /* On mobile, move to bottom or menu */
-}
 
 .hidden {
     display: none !important;
@@ -417,9 +410,7 @@ a {
     color: var(--success) !important;
 }
 
-.text-dim {
-    color: var(--text-dim) !important;
-}
+
 
 /* ── Premium Modal Overhaul ── */
 .modal-profile-preview {
@@ -598,4 +589,57 @@ a {
 
 .nav-edit-badge i {
     font-size: 7px;
+}
+
+/* ── JS-Referenced Utility Classes ── */
+.scale-95 { transform: scale(0.95); }
+.opacity-0 { opacity: 0; }
+.dragover { border-color: var(--accent) !important; background: rgba(37, 99, 235, 0.05); }
+
+/* ── Mobile Bottom Navigation ── */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(5, 5, 5, 0.95);
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    border-top: 1px solid var(--border);
+    z-index: 1000;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+    .mobile-nav {
+        display: flex;
+    }
+
+    body {
+        padding-bottom: 64px;
+    }
+}
+
+.mobile-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    font-weight: 500;
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+
+.mobile-nav a.active {
+    color: #fff;
+}
+
+.mobile-nav a i {
+    font-size: 1.1rem;
 }
