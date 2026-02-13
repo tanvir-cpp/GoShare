@@ -3,6 +3,7 @@ package handler
 import (
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -20,7 +21,7 @@ type visitor struct {
 	mu       sync.Mutex
 }
 
-var defaultLimiter = newRateLimiter(60, time.Minute) // 60 requests/minute per IP
+var defaultLimiter = newRateLimiter(300, time.Minute) // 300 requests/minute per IP
 
 func newRateLimiter(rate int, window time.Duration) *rateLimiter {
 	rl := &rateLimiter{rate: rate, window: window}
@@ -58,12 +59,16 @@ func (rl *rateLimiter) allow(ip string) bool {
 }
 
 func getIP(r *http.Request) string {
-	// Check X-Forwarded-For for reverse proxy setups
+	// Check X-Forwarded-For for reverse proxy setups (Koyeb, Cloudflare, etc.)
+	// Format: "client, proxy1, proxy2" — take the first (original client) IP.
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		return xff
+		if i := strings.IndexByte(xff, ','); i > 0 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return strings.TrimSpace(xff)
 	}
 	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		return xri
+		return strings.TrimSpace(xri)
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -73,8 +78,15 @@ func getIP(r *http.Request) string {
 }
 
 // RateLimit wraps a handler with per-IP rate limiting.
+// SSE (long-lived connections) and health checks are exempt.
 func RateLimit(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Exempt SSE and health endpoints — SSE is a single long-lived
+		// connection, not repeated requests.
+		if r.URL.Path == "/api/events" || r.URL.Path == "/health" {
+			h(w, r)
+			return
+		}
 		ip := getIP(r)
 		if !defaultLimiter.allow(ip) {
 			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
