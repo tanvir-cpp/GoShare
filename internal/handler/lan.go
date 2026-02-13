@@ -48,13 +48,14 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	dev, ok := discovery.Devices[id]
 	if !ok {
 		dev = &discovery.Device{
-			ID:       id,
-			Name:     body.Name,
-			Icon:     discovery.MakeDeviceIcon(id),
-			Type:     discovery.DetectType(r.UserAgent()),
-			IP:       r.RemoteAddr,
-			UA:       r.UserAgent(),
-			LastSeen: time.Now(),
+			ID:        id,
+			Name:      body.Name,
+			Icon:      discovery.MakeDeviceIcon(id),
+			Type:      discovery.DetectType(r.UserAgent()),
+			IP:        r.RemoteAddr,
+			NetworkIP: discovery.ExtractIP(r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("X-Real-IP")),
+			UA:        r.UserAgent(),
+			LastSeen:  time.Now(),
 		}
 		if dev.Name == "" {
 			dev.Name = discovery.MakeDeviceName(id)
@@ -69,6 +70,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		dev.LastSeen = time.Now()
 		dev.IP = r.RemoteAddr
+		dev.NetworkIP = discovery.ExtractIP(r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("X-Real-IP"))
 	}
 	discovery.Lock.Unlock()
 
@@ -107,35 +109,31 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 	dev, ok := discovery.Devices[id]
 	if !ok {
 		dev = &discovery.Device{
-			ID:       id,
-			Name:     discovery.MakeDeviceName(id),
-			Icon:     discovery.MakeDeviceIcon(id),
-			Type:     discovery.DetectType(r.UserAgent()),
-			IP:       r.RemoteAddr,
-			UA:       r.UserAgent(),
-			LastSeen: time.Now(),
+			ID:        id,
+			Name:      discovery.MakeDeviceName(id),
+			Icon:      discovery.MakeDeviceIcon(id),
+			Type:      discovery.DetectType(r.UserAgent()),
+			IP:        r.RemoteAddr,
+			NetworkIP: discovery.ExtractIP(r.RemoteAddr, r.Header.Get("X-Forwarded-For"), r.Header.Get("X-Real-IP")),
+			UA:        r.UserAgent(),
+			LastSeen:  time.Now(),
 		}
 		discovery.Devices[id] = dev
-		log.Printf("Auto-registered device on SSE connection: %s (%s)", dev.Name, id)
+		log.Printf("Auto-registered device on SSE connection: %s (%s) [Network: %s]", dev.Name, id, dev.NetworkIP)
 	}
 	dev.Queues = append(dev.Queues, q)
 	dev.LastSeen = time.Now()
 	log.Printf("SSE Connected: %s (%s) [Total Queues: %d]", dev.Name, id, len(dev.Queues))
 	discovery.Lock.Unlock()
 
-	// Send the initial peer list.
-	var list []discovery.Device
+	// Send the initial peer list (only peers on the same network).
 	discovery.Lock.RLock()
-	for did, d := range discovery.Devices {
-		if did != id {
-			list = append(list, *d)
-		}
-	}
+	list := discovery.PeersOnSameNetwork(id)
 	discovery.Lock.RUnlock()
 	msg, _ := json.Marshal(list)
 	fmt.Fprintf(w, "event: peers\ndata: %s\n\n", msg)
 	flusher.Flush()
-	log.Printf("Sent initial peer list to %s (%d peers)", id, len(list))
+	log.Printf("Sent initial peer list to %s (%d peers on same network)", id, len(list))
 
 	// Announce this device to others.
 	discovery.Lock.RLock()
