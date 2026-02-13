@@ -33,6 +33,10 @@ In **LAN Mode**, files are temporarily stored and streamed:
 - **No Accounts**: There are no database-backed accounts. Identities are ephemeral.
 - **Privacy by Design**: We store no user logs, metadata beyond what's needed for the active session, or tracking cookies.
 
+### 5. Network Isolation
+- **Smart Grouping**: In deployed environments (like Koyeb), devices are grouped by their public IP address.
+- **Privacy Barrier**: Users can only discover and share files with peers on the same local network (e.g., University Wi-Fi). This prevents users on different networks from seeing each other on the "Nearby" radar.
+
 ---
 
 ## 🛑 Reporting a Vulnerability

@@ -11,7 +11,7 @@
 
 ## ✨ Key Features
 
-- **🌐 LAN Auto-Discovery** — Instantly find and connect with devices on your local network using Server-Sent Events (SSE).
+- **🌐 Smart LAN Discovery** — Automatically detects devices on the same Wi-Fi network using public IP grouping, ensuring privacy in shared environments (like university networks).
 - **🛡️ Secure P2P Transfers** — Direct peer-to-peer sharing via WebRTC DataChannels — your files never touch the server and are end-to-end encrypted.
 - **📱 Installable PWA** — Works on any device with a modern browser and can be installed as a native-like app on mobile and desktop.
 - **🎨 Premium Dark UI** — A stunning interface with glassmorphism, micro-animations, and sophisticated dark mode.
@@ -89,9 +89,8 @@ GoShare/
 ├── cmd/goshare/          # Application entry point
 │   └── main.go
 ├── internal/
-│   ├── discovery/        # Device registry & SSE broadcasting
-│   │   ├── broker.go     # SSE event broadcasting
-│   │   └── device.go     # Device model & auto-naming
+│   ├── discovery/        # Device registry & network-aware discovery
+│   │   └── device.go     # Device model, IP detection & SSE broadcasting
 │   ├── handler/          # HTTP handlers & middleware
 │   │   ├── lan.go        # LAN file sharing endpoints
 │   │   ├── p2p.go        # WebRTC signaling endpoints
@@ -120,7 +119,7 @@ GoShare includes multiple layers of security hardening:
 
 | Feature | Details |
 |---------|---------|
-| **Rate Limiting** | 60 requests/minute per IP address |
+| **Rate Limiting** | 300 requests/minute per IP address (SSE connections exempted) |
 | **Upload Size Limit** | 500 MB maximum per upload |
 | **Security Headers** | `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy` |
 | **Method Enforcement** | POST-only for register/upload, DELETE-only for file deletion |

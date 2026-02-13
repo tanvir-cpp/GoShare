@@ -23,7 +23,7 @@ GoShare is designed as a **decentralized-first** file-sharing platform. It utili
 ├── cmd/goshare/main.go     # Application entry point
 ├── docs/                   # Project documentation
 ├── internal/               # Core backend logic (encapsulated)
-│   ├── discovery/          # Peer registry and signaling broker
+│   ├── discovery/          # Peer registry and network-aware discovery
 │   ├── handler/            # HTTP request handlers (LAN, P2P, Middleware)
 │   ├── network/            # Networking utilities (IP discovery)
 │   └── server/             # Server initialization and routing
@@ -39,9 +39,10 @@ GoShare is designed as a **decentralized-first** file-sharing platform. It utili
 
 ### `internal/discovery` (The Registry)
 This module manages the list of active peers on the local network.
-- **Device Struct**: Stores peer metadata (`ID`, `Name`, `Icon`, `Type`, `Queues`).
-- **SSE Broadcasting**: Uses Go channels to push events (`device-joined`, `shared-update`, `files-sent`) to connected clients.
-- **Cleanup Goroutine**: A background process monitors `LastSeen` timestamps and active connections. Peer entries are purged after 60 seconds of inactivity to keep the registry clean.
+- **Device Struct**: Stores peer metadata (`ID`, `Name`, `Icon`, `Type`, `Queues`) and networking info (`NetworkIP`).
+- **Smart Network Grouping**: Devices are grouped by their public IP (`NetworkIP`). Users only see peers on the *same* Wi-Fi network, ensuring privacy in shared environments (like universities).
+- **SSE Broadcasting**: Supports targeted notifications (`Notify`) and network-scoped broadcasts (`Broadcast`) via Go channels.
+- **Cleanup Goroutine**: `CleanupStale` monitors `LastSeen` timestamps and removes inactive peers after 2 minutes.
 
 ### `internal/handler` (Request Processing)
 - **`lan.go`**: Handles registration (`/api/register`), SSE connection (`/api/events`), and multi-part file uploads (`/api/upload`). 
@@ -80,7 +81,7 @@ Implementation in `web/static/js/p2p.js`:
 
 ### LAN Mode (Client-Server-Client)
 - **Registration**: Client POSTs identity to `/api/register`.
-- **Discovery**: Server broadcasts `device-joined` via SSE.
+- **Discovery**: Server broadcasts `device-joined` via SSE (only to devices on the same network).
 - **Transfer**: 
   - Sender uploads file via `/api/upload`.
   - Server notifies receiver via SSE (`files-sent`).
