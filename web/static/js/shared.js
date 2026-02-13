@@ -1,3 +1,13 @@
+// ── PWA Service Worker Registration ──
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
+            .then((reg) => console.log("[PWA] SW registered, scope:", reg.scope))
+            .catch((err) => console.warn("[PWA] SW registration failed:", err));
+    });
+}
+
 const myId =
     localStorage.getItem("device_id") ||
     (() => {

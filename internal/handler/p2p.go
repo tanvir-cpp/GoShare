@@ -77,7 +77,9 @@ func HandleP2PCreate(w http.ResponseWriter, r *http.Request) {
 	log.Printf("P2P room created: %s", roomID)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"room": roomID})
+	if err := json.NewEncoder(w).Encode(map[string]string{"room": roomID}); err != nil {
+		log.Printf("Error encoding P2P create response: %v", err)
+	}
 }
 
 // HandleP2PSignal stores a signaling message in a room.
@@ -152,8 +154,10 @@ func HandleP2PPoll(w http.ResponseWriter, r *http.Request) {
 	room.mu.Unlock()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"signals": result,
 		"index":   total,
-	})
+	}); err != nil {
+		log.Printf("Error encoding P2P poll response: %v", err)
+	}
 }

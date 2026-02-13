@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>404 — Page Not Found | GoShare</title>
+  <meta name="description" content="The page you're looking for doesn't exist." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+  <link rel="stylesheet" href="/static/css/shared.css" />
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#050505" />
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GoShare" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.svg" />
+  <style>
+    .error-section {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .error-code {
+      font-size: clamp(6rem, 15vw, 12rem);
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      line-height: 1;
+      opacity: 0.08;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .error-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      animation: preview-float 3s ease-in-out infinite;
+    }
+
+    .error-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .error-desc {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 400px;
+      margin-bottom: 2.5rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grain-overlay"></div>
+  <div class="ambient-light"></div>
+
+  <!-- Navbar -->
+  <nav class="nav-container">
+    <a href="/" class="logo-link">
+      <span>GoShare</span>
+    </a>
+
+    <div class="nav-switcher">
+      <a href="/pages/lan.html">Nearby</a>
+      <a href="/pages/p2p.html">Global</a>
+    </div>
+  </nav>
+
+  <!-- 404 Content -->
+  <main class="content-section app-entrance">
+    <section class="error-section">
+      <div class="error-code">404</div>
+      <div class="error-icon">🔍</div>
+      <h1 class="error-title">Page not found</h1>
+      <p class="error-desc">
+        The page you're looking for doesn't exist or has been moved.
+      </p>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <a href="/" class="btn-primary">
+          Go Home
+          <i class="fa-solid fa-arrow-right" style="font-size: 14px;"></i>
+        </a>
+        <a href="/pages/lan.html" class="text-muted hover:text-white" style="font-weight: 500; font-size: 0.9rem;">
+          Start Sharing
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-nav">
+    <a href="/">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </a>
+    <a href="/pages/lan.html">
+      <i class="fa-solid fa-wifi"></i>
+      <span>Nearby</span>
+    </a>
+    <a href="/pages/p2p.html">
+      <i class="fa-solid fa-globe"></i>
+      <span>Global</span>
+    </a>
+  </nav>
+
+  <footer style="margin-top: 8rem; border-top: 1px solid var(--border); padding: 4rem 1.5rem; text-align: center;">
+    <div class="text-dim" style="font-size: 0.8rem;">
+      &copy; 2026 GoShare. All rights reserved.
+    </div>
+  </footer>
+</body>
+
+</html>

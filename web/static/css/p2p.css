@@ -3,6 +3,14 @@
    P2P-specific animations and layout
    ═══════════════════════════════════════════════ */
 
+/* ── P2P Title ── */
+.p2p-title {
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+}
+
 /* ── Pulse Animation (loading states) ── */
 .pulse {
     animation: pulse 2s ease-in-out infinite;

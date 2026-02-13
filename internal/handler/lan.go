@@ -18,8 +18,15 @@ import (
 // SharedDir is the root directory for uploaded files.
 var SharedDir = "shared_files"
 
+// MaxUploadSize is the maximum allowed upload size (500 MB).
+const MaxUploadSize = 500 << 20
+
 // HandleRegister registers or updates a device on the network.
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	log.Printf("Registering request from %s", r.RemoteAddr)
 	var body struct {
 		ID   string `json:"id"`
@@ -71,7 +78,9 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dev)
+	if err := json.NewEncoder(w).Encode(dev); err != nil {
+		log.Printf("Error encoding register response: %v", err)
+	}
 }
 
 // HandleEvents opens an SSE stream for real-time peer updates.
@@ -177,6 +186,14 @@ func HandleEvents(w http.ResponseWriter, r *http.Request) {
 
 // HandleUpload processes multipart file uploads (public or private).
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Enforce maximum upload size.
+	r.Body = http.MaxBytesReader(w, r.Body, MaxUploadSize)
+
 	// Use a smaller memory buffer (32MB) to prevent RAM spikes.
 	// Large files will be automatically streamed to disk.
 	err := r.ParseMultipartForm(32 << 20)
@@ -289,6 +306,10 @@ func isValidName(name string) bool {
 
 // HandleDelete removes a file from the public shared directory.
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	name := filepath.Base(r.URL.Path)
 	if !isValidName(name) {
 		http.Error(w, "invalid filename", 400)
@@ -300,6 +321,7 @@ func HandleDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not delete file", 500)
 		return
 	}
+	log.Printf("File deleted: %s", name)
 	discovery.Broadcast("shared-update", nil, "")
 	w.WriteHeader(200)
 }
@@ -345,7 +367,15 @@ func HandleGetDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dev)
+	if err := json.NewEncoder(w).Encode(dev); err != nil {
+		log.Printf("Error encoding device response: %v", err)
+	}
+}
+
+// HandleHealth returns a simple health check for container probes.
+func HandleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"status":"ok"}`))
 }
 
 // HandleInfo returns the server's LAN IP address.
@@ -356,5 +386,7 @@ func HandleInfo(w http.ResponseWriter, r *http.Request) {
 		IP: network.GetLocalIP(),
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Error encoding info response: %v", err)
+	}
 }

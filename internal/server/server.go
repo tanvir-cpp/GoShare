@@ -16,7 +16,7 @@ import (
 )
 
 // staticHandler serves static files and the homepage for "/".
-func staticHandler(fs http.Handler, homeFile string) http.HandlerFunc {
+func staticHandler(fs http.Handler, homeFile, notFoundFile string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/events" && !strings.HasPrefix(r.URL.Path, "/api/") {
 			log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
@@ -29,6 +29,14 @@ func staticHandler(fs http.Handler, homeFile string) http.HandlerFunc {
 
 		if r.URL.Path == "/" {
 			http.ServeFile(w, r, homeFile)
+			return
+		}
+
+		// Check if the static file exists before serving
+		filePath := filepath.Join("web", r.URL.Path)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			http.ServeFile(w, r, notFoundFile)
 			return
 		}
 

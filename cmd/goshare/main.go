@@ -38,11 +38,12 @@ func main() {
 
 	// Static file server — serves from web/pages for HTML, web/static for assets.
 	staticFS := http.FileServer(http.Dir("web"))
-	server.RegisterRoutes(staticFS, "web/pages/home.html")
+	server.RegisterRoutes(staticFS, "web/pages/home.html", "web/pages/404.html")
 
 	// Background cleanup of stale devices.
 	go discovery.CleanupStale()
 	handler.StartP2PCleanup()
+	handler.StartPrivateCleanup()
 
 	// Start the server.
 	ip := network.GetLocalIP()
