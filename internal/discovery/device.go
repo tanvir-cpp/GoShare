@@ -25,9 +25,40 @@ func areInSameNetwork(ip1, ip2 string) bool {
 	if ip1 == ip2 {
 		return true
 	}
+
 	// If both are local/private IPs, they belong to the same LAN discovery group.
-	// This ensures that when GoShare is run locally, all connected devices can see each other.
-	return isLocalIP(ip1) && isLocalIP(ip2)
+	if isLocalIP(ip1) && isLocalIP(ip2) {
+		return true
+	}
+
+	// Handle IPv6 Prefix Grouping
+	// In IPv6, every device gets a unique public IP, but they usually share the same /64 prefix on a LAN.
+	p1 := net.ParseIP(ip1)
+	p2 := net.ParseIP(ip2)
+
+	if p1 != nil && p2 != nil {
+		p1_4 := p1.To4()
+		p2_4 := p2.To4()
+
+		// If both are IPv6 (not IPv4-mapped), check the prefix
+		if p1_4 == nil && p2_4 == nil {
+			// Compare the first 8 bytes (64 bits) for the network prefix
+			if len(p1) >= 8 && len(p2) >= 8 {
+				match := true
+				for i := 0; i < 8; i++ {
+					if p1[i] != p2[i] {
+						match = false
+						break
+					}
+				}
+				if match {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // Device represents a discovered peer on the network.
@@ -92,23 +123,40 @@ func DetectType(ua string) string {
 // ExtractIP extracts the client's public IP from the HTTP request context.
 // It checks X-Forwarded-For (reverse proxy), X-Real-IP, then falls back to RemoteAddr.
 func ExtractIP(remoteAddr string, xForwardedFor string, xRealIP string) string {
+	var rawIP string
+
 	// Check X-Forwarded-For first (Koyeb, Cloudflare, etc.)
-	// Format: "client, proxy1, proxy2" — take the first (real client) IP.
 	if xForwardedFor != "" {
 		if i := strings.IndexByte(xForwardedFor, ','); i > 0 {
-			return strings.TrimSpace(xForwardedFor[:i])
+			rawIP = strings.TrimSpace(xForwardedFor[:i])
+		} else {
+			rawIP = strings.TrimSpace(xForwardedFor)
 		}
-		return strings.TrimSpace(xForwardedFor)
+	} else if xRealIP != "" {
+		rawIP = strings.TrimSpace(xRealIP)
+	} else {
+		host, _, err := net.SplitHostPort(remoteAddr)
+		if err != nil {
+			rawIP = remoteAddr
+		} else {
+			rawIP = host
+		}
 	}
-	if xRealIP != "" {
-		return strings.TrimSpace(xRealIP)
+
+	// Double-check if rawIP still contains a port (some headers can be messy)
+	if strings.Contains(rawIP, ":") && !strings.Contains(rawIP, "]") && strings.Count(rawIP, ":") == 1 {
+		// Likely IPv4:Port
+		if h, _, err := net.SplitHostPort(rawIP); err == nil {
+			rawIP = h
+		}
+	} else if strings.HasPrefix(rawIP, "[") {
+		// Likely [IPv6]:Port
+		if h, _, err := net.SplitHostPort(rawIP); err == nil {
+			rawIP = h
+		}
 	}
-	// Strip port from RemoteAddr
-	host, _, err := net.SplitHostPort(remoteAddr)
-	if err != nil {
-		return remoteAddr
-	}
-	return host
+
+	return rawIP
 }
 
 // PeersOnSameNetwork returns all devices that share the same NetworkIP as
