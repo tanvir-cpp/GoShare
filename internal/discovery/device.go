@@ -11,6 +11,25 @@ import (
 	"time"
 )
 
+// isLocalIP returns true if the given IP string is a loopback, private, or link-local address.
+func isLocalIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast()
+}
+
+// areInSameNetwork checks if two IPs should be considered part of the same discovery group.
+func areInSameNetwork(ip1, ip2 string) bool {
+	if ip1 == ip2 {
+		return true
+	}
+	// If both are local/private IPs, they belong to the same LAN discovery group.
+	// This ensures that when GoShare is run locally, all connected devices can see each other.
+	return isLocalIP(ip1) && isLocalIP(ip2)
+}
+
 // Device represents a discovered peer on the network.
 type Device struct {
 	ID        string        `json:"id"`
@@ -102,7 +121,7 @@ func PeersOnSameNetwork(selfID string) []Device {
 	}
 	var peers []Device
 	for did, d := range Devices {
-		if did != selfID && d.NetworkIP == self.NetworkIP {
+		if did != selfID && areInSameNetwork(d.NetworkIP, self.NetworkIP) {
 			peers = append(peers, *d)
 		}
 	}
@@ -137,7 +156,7 @@ func Broadcast(event string, data interface{}, senderID string) {
 		}
 		// If we know the sender's network, only send to same-network peers.
 		// If senderID is empty (e.g. shared-update), send to everyone.
-		if senderNetworkIP != "" && d.NetworkIP != senderNetworkIP {
+		if senderNetworkIP != "" && !areInSameNetwork(d.NetworkIP, senderNetworkIP) {
 			continue
 		}
 		for _, q := range d.Queues {
